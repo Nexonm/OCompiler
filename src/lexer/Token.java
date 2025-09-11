@@ -113,7 +113,7 @@ public record Token(TokenType type, String lexeme, Span span) {
 
     @Override
     public String toString() {
-        return String.format("lexer.Token{type=%s, lexeme='%s', span=%s}",
+        return String.format("Token{type=%s, lexeme='%s', span=%s}",
                 type, lexeme, span);
     }
 }

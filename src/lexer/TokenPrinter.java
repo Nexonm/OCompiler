@@ -23,7 +23,7 @@ public class TokenPrinter {
     public void printTokens() {
         System.out.println("Tokenization Results:");
         System.out.println("=".repeat(60));
-        System.out.printf("%-18s | %-12s | %-15s| Additional\n", "lexer.Token Type", "Lexeme", "lexer.Span");
+        System.out.printf("%-18s | %-12s | %-15s| Additional\n", "Token Type", "Lexeme", "Span");
         System.out.println("=".repeat(60));
         for (Token token : tokens) {
             if (token.type() != TokenType.EOF) {

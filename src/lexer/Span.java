@@ -15,13 +15,13 @@ public record Span(int line, int start, int end) {
      */
     public Span {
         if (line < 0) {
-            throw new IllegalArgumentException("Error creating a new lexer.Span: line must be >= 0, got: " + line);
+            throw new IllegalArgumentException("Error creating a new Span: line must be >= 0, got: " + line);
         }
         if (start < 0) {
-            throw new IllegalArgumentException("Error creating a new lexer.Span: start must be >= 0, got: " + start);
+            throw new IllegalArgumentException("Error creating a new Span: start must be >= 0, got: " + start);
         }
         if (end < start) {
-            throw new IllegalArgumentException("Error creating a new lexer.Span: end must be >= start, got start=" + start +
+            throw new IllegalArgumentException("Error creating a new Span: end must be >= start, got start=" + start +
                     ", end=" + end);
         }
     }
@@ -112,6 +112,6 @@ public record Span(int line, int start, int end) {
 
     @Override
     public String toString() {
-        return String.format("lexer.Span(%d:%d-%d)", line, start, end);
+        return String.format("%d:%d-%d", line+1, start+1, end);
     }
 }
