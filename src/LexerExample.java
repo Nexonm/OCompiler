@@ -1,6 +1,7 @@
 import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenPrinter;
+import parser.ASTTreePrinter;
 import parser.Parser;
 import parser.ast.ASTNode;
 import parser.ast.declarations.Program;
@@ -42,13 +43,7 @@ public class LexerExample {
         Program ast = parser.parse();
 
         // Step 3: Check results
-        if (parser.hasErrors()) {
-            parser.getErrors().forEach(System.err::println);
-        } else {
-            System.out.println("Success! Parsed " + ast.getClassCount() + " classes");
-        }
-        for (ASTNode node : ast.getClasses()){
-            System.out.println(node.toString());
-        }
+        ASTTreePrinter astPrinter = new ASTTreePrinter();
+        System.out.println(astPrinter.print(ast));
     }
 }

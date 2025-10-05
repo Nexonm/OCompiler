@@ -5,6 +5,7 @@ import lexer.TokenType;
 import lexer.Span;
 import parser.ast.declarations.*;
 import parser.ast.expressions.*;
+import parser.ast.statements.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -194,18 +195,16 @@ public class Parser {
             baseClassName = baseToken.lexeme();
         }
         consume(TokenType.IS, "Expected 'is'");
-        // Parse members (NEW in Phase 2!)
+        // Parse members
         List<MemberDecl> members = new ArrayList<>();
         while (!check(TokenType.END) && !isAtEnd()) {
             // Check what kind of member this is
             if (check(TokenType.VAR)) {
                 members.add(parseVariableDeclaration());
             } else if (check(TokenType.METHOD)) {
-                error("Method declarations not yet implemented (Phase 3)");
-                advance(); // Skip for now
+                members.add(parseMethodDeclaration());
             } else if (check(TokenType.THIS)) {
-                error("Constructor declarations not yet implemented (Phase 3)");
-                advance(); // Skip for now
+                members.add(parseConstructorDeclaration());
             } else {
                 error("Expected member declaration (var, method, or this)");
                 advance(); // Skip invalid token
@@ -236,17 +235,173 @@ public class Parser {
     }
 
     /**
-     * Parses an expression (NEW in Phase 2).
-     * Grammar: Expression → Primary | ConstructorCall
+     * Parses a method declaration (NEW in Phase 3).
+     * Grammar: MethodDeclaration → method Identifier [ Parameters ] [ : Identifier ] [ MethodBody ]
      *
-     * Phase 2 limitation: No method calls or member access yet
+     * Examples:
+     * - method foo()
+     * - method add(a : Integer, b : Integer) : Integer
+     * - method getValue() : Integer is return count end
      */
+    private MethodDecl parseMethodDeclaration() {
+        Token methodToken = consume(TokenType.METHOD, "Expected 'method'");
+        Token nameToken = consume(TokenType.IDENTIFIER, "Expected method name");
+        String methodName = nameToken.lexeme();
+        // Parse parameters (optional)
+        List<Parameter> parameters = new ArrayList<>();
+        if (match(TokenType.LPAREN)) {
+            parameters = parseParameters();
+            consume(TokenType.RPAREN, "Expected ')' after parameters");
+        }
+        // Parse return type (optional)
+        String returnTypeName = null;
+        if (match(TokenType.COLON)) {
+            Token typeToken = consume(TokenType.IDENTIFIER, "Expected return type name");
+            returnTypeName = typeToken.lexeme();
+        }
+        // Parse body (optional - forward declaration if missing)
+        List<Statement> body = null;
+        Span endSpan = previous().span();
+        if (match(TokenType.IS)) {
+            body = parseMethodBody();
+            Token endToken = consume(TokenType.END, "Expected 'end'");
+            endSpan = endToken.span();
+        }
+        Span span = methodToken.span().merge(endSpan);
+        return new MethodDecl(methodName, parameters, returnTypeName, body, span);
+    }
+
+    /**
+     * Parses a constructor declaration (NEW in Phase 3).
+     * Grammar: ConstructorDeclaration → this [ Parameters ] is Body end
+     *
+     * Example:
+     * this(initialCount : Integer) is
+     *     count := initialCount
+     * end
+     */
+    private ConstructorDecl parseConstructorDeclaration() {
+        Token thisToken = consume(TokenType.THIS, "Expected 'this'");
+
+        // Parse parameters (optional)
+        List<Parameter> parameters = new ArrayList<>();
+        if (match(TokenType.LPAREN)) {
+            parameters = parseParameters();
+            consume(TokenType.RPAREN, "Expected ')' after parameters");
+        }
+
+        consume(TokenType.IS, "Expected 'is'");
+        List<Statement> body = parseMethodBody();
+        Token endToken = consume(TokenType.END, "Expected 'end'");
+
+        Span span = thisToken.span().merge(endToken.span());
+        return new ConstructorDecl(parameters, body, span);
+    }
+
+    /**
+     * Parses method/constructor parameters (NEW in Phase 3).
+     * Grammar: Parameters → [ Parameter { , Parameter } ]
+     *          Parameter → Identifier : Identifier
+     *
+     * Note: Call this AFTER consuming the opening '('
+     */
+    private List<Parameter> parseParameters() {
+        List<Parameter> parameters = new ArrayList<>();
+        // Empty parameter list?
+        if (check(TokenType.RPAREN)) {
+            return parameters;
+        }
+        // Parse first parameter
+        parameters.add(parseParameter());
+        // Parse remaining parameters
+        while (match(TokenType.COMMA)) {
+            parameters.add(parseParameter());
+        }
+        return parameters;
+    }
+
+    /**
+     * Parses a single parameter
+     * Grammar: Parameter → Identifier : Identifier
+     *
+     * Example: count : Integer
+     */
+    private Parameter parseParameter() {
+        Token nameToken = consume(TokenType.IDENTIFIER, "Expected parameter name");
+        consume(TokenType.COLON, "Expected ':' after parameter name");
+        Token typeToken = consume(TokenType.IDENTIFIER, "Expected parameter type");
+
+        Span span = nameToken.span().merge(typeToken.span());
+        return new Parameter(nameToken.lexeme(), typeToken.lexeme(), span);
+    }
+
+    /**
+     * Parses a method or constructor body
+     * Grammar: Body → { Statement }
+     *
+     * Note: Call this AFTER consuming 'is'
+     */
+    private List<Statement> parseMethodBody() {
+        List<Statement> statements = new ArrayList<>();
+
+        while (!check(TokenType.END) && !isAtEnd()) {
+            statements.add(parseStatement());
+        }
+
+        return statements;
+    }
+
+    /**
+     * Parses a statement
+     * Grammar: Statement → ReturnStatement | Assignment | IfStatement | WhileLoop
+     */
+    private Statement parseStatement() {
+        // Return statement
+        if (check(TokenType.RETURN)) {
+            return parseReturnStatement();
+        }
+
+        // For now, treat unknown as error and skip
+        error("Expected statement (currently only 'return' supported in Phase 3)");
+        advance();
+        return new ReturnStatement(null, previous().span());
+    }
+
+    /**
+     * Parses a return statement
+     * Grammar: ReturnStatement → return [ Expression ]
+     *
+     * Examples:
+     * - return           (void return)
+     * - return x         (return value)
+     * - return x.Plus(y) (return expression)
+     */
+    private ReturnStatement parseReturnStatement() {
+        Token returnToken = consume(TokenType.RETURN, "Expected 'return'");
+        // Check if there's a return value
+        Expression value = null;
+        if (!check(TokenType.END) && !check(TokenType.RETURN) && !isAtEnd()) {
+            // Try to parse expression
+            // For now, simple heuristic: if next token could start expression
+            if (check(TokenType.IDENTIFIER) || check(TokenType.INTEGER_LITERAL) ||
+                    check(TokenType.REAL_LITERAL) || check(TokenType.TRUE) ||
+                    check(TokenType.FALSE) || check(TokenType.THIS) ||
+                    check(TokenType.LPAREN)) {
+                value = parseExpression();
+            }
+        }
+        Span span = value != null ?
+                returnToken.span().merge(value.getSpan()) :
+                returnToken.span();
+        return new ReturnStatement(value, span);
+    }
+
     private Expression parseExpression() {
         return parsePrimary();
     }
 
     /**
-     * Parses a primary expression (NEW in Phase 2).
+     * Parses a primary expression
      * Grammar: Primary → IntegerLiteral | RealLiteral | BooleanLiteral
      *                   | this | Identifier | ConstructorCall
      */
