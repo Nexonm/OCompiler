@@ -130,7 +130,7 @@ public class ClassDecl extends ASTNode {
         if (members.isEmpty()) {
             return builder.toString();
         } else {
-
+            builder.append("\n");
             for (ASTNode node : members) {
                 builder.append(node.toString()).append("\n");
             }

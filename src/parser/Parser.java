@@ -3,9 +3,8 @@ package parser;
 import lexer.Token;
 import lexer.TokenType;
 import lexer.Span;
-import parser.ast.declarations.ClassDecl;
-import parser.ast.declarations.MemberDecl;
-import parser.ast.declarations.Program;
+import parser.ast.declarations.*;
+import parser.ast.expressions.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +16,7 @@ import java.util.List;
  * This parser implements a top-down parsing strategy where each grammar rule
  * corresponds to one parsing method. It builds an Abstract Syntax Tree (AST)
  * from a stream of tokens produced by the lexer.
- *
+ * <p>
  * Grammar:
  *   Program → { ClassDeclaration }
  *   ClassDeclaration → class Identifier [extends Identifier] is { MemberDeclaration } end
@@ -27,10 +26,6 @@ public class Parser {
     private int current = 0;
     private final List<String> errors = new ArrayList<>();
 
-    /**
-     * Creates a new parser with the given token stream.
-     * @param tokens List of tokens from the lexer (must include EOF token)
-     */
     public Parser(List<Token> tokens) {
         if (tokens == null || tokens.isEmpty()) {
             throw new IllegalArgumentException("Token list cannot be null or empty");
@@ -39,16 +34,13 @@ public class Parser {
     }
 
 
-    /**
-     * Parses the entire token stream and returns the AST root.
-     * @return Program node representing the entire source file
-     */
     public Program parse() {
         try {
             return parseProgram();
         } catch (Exception e) {
             error("Unexpected error during parsing: " + e.getMessage());
-            return new Program(new ArrayList<>()); // Return empty program
+            e.printStackTrace(); // For debugging
+            return new Program(new ArrayList<>());
         }
     }
 
@@ -145,7 +137,7 @@ public class Parser {
             return advance();
         }
         error(message + " (found '" + peek().lexeme() + "')");
-        return peek(); // Return current token as fallback
+        return peek();
     }
 
     /**
@@ -175,7 +167,6 @@ public class Parser {
             if (check(TokenType.CLASS)) {
                 classes.add(parseClassDeclaration());
             } else {
-                // Found something other than 'class' at top level
                 error("Expected 'class' declaration at top level");
                 advance(); // Skip the invalid token and continue
             }
@@ -189,7 +180,6 @@ public class Parser {
      * Grammar: ClassDeclaration → class Identifier [extends Identifier]
      *                            is { MemberDeclaration } end
      *
-     * Phase 1: Parses only empty classes (no members yet)
      *
      * @return ClassDecl node
      */
@@ -204,17 +194,122 @@ public class Parser {
             baseClassName = baseToken.lexeme();
         }
         consume(TokenType.IS, "Expected 'is'");
-        // Phase 1: Skip member parsing for now
-        // TODO Phase 2: Parse members (variables, methods, constructors)
+        // Parse members (NEW in Phase 2!)
         List<MemberDecl> members = new ArrayList<>();
-        // For now, just skip to 'end'
         while (!check(TokenType.END) && !isAtEnd()) {
-            error("Member declarations not yet implemented (Phase 2)");
-            advance(); // Skip unknown tokens
+            // Check what kind of member this is
+            if (check(TokenType.VAR)) {
+                members.add(parseVariableDeclaration());
+            } else if (check(TokenType.METHOD)) {
+                error("Method declarations not yet implemented (Phase 3)");
+                advance(); // Skip for now
+            } else if (check(TokenType.THIS)) {
+                error("Constructor declarations not yet implemented (Phase 3)");
+                advance(); // Skip for now
+            } else {
+                error("Expected member declaration (var, method, or this)");
+                advance(); // Skip invalid token
+            }
         }
+
         Token endToken = consume(TokenType.END, "Expected 'end'");
-        // Merge spans from 'class' keyword to 'end' keyword
+
         Span span = classToken.span().merge(endToken.span());
         return new ClassDecl(className, baseClassName, members, span);
+    }
+
+    /**
+     * Parses a variable declaration (NEW in Phase 2).
+     * Grammar: VariableDeclaration → var Identifier : Expression
+     *
+     * Example: var x : Integer(42)
+     */
+    private VariableDecl parseVariableDeclaration() {
+        Token varToken = consume(TokenType.VAR, "Expected 'var'");
+        Token nameToken = consume(TokenType.IDENTIFIER, "Expected variable name");
+        consume(TokenType.COLON, "Expected ':'");
+
+        Expression initializer = parseExpression();
+
+        Span span = varToken.span().merge(initializer.getSpan());
+        return new VariableDecl(nameToken.lexeme(), initializer, span);
+    }
+
+    /**
+     * Parses an expression (NEW in Phase 2).
+     * Grammar: Expression → Primary | ConstructorCall
+     *
+     * Phase 2 limitation: No method calls or member access yet
+     */
+    private Expression parseExpression() {
+        return parsePrimary();
+    }
+
+    /**
+     * Parses a primary expression (NEW in Phase 2).
+     * Grammar: Primary → IntegerLiteral | RealLiteral | BooleanLiteral
+     *                   | this | Identifier | ConstructorCall
+     */
+    private Expression parsePrimary() {
+        if (check(TokenType.INTEGER_LITERAL)) {
+            Token token = advance();
+            try {
+                int value = Integer.parseInt(token.lexeme());
+                return new IntegerLiteral(value, token.span());
+            } catch (NumberFormatException e) {
+                error("Invalid integer literal: " + token.lexeme());
+                return new IntegerLiteral(0, token.span());
+            }
+        }
+        if (check(TokenType.REAL_LITERAL)) {
+            Token token = advance();
+            try {
+                double value = Double.parseDouble(token.lexeme());
+                return new RealLiteral(value, token.span());
+            } catch (NumberFormatException e) {
+                error("Invalid real literal: " + token.lexeme());
+                return new RealLiteral(0.0, token.span());
+            }
+        }
+        if (match(TokenType.TRUE)) {
+            return new BooleanLiteral(true, previous().span());
+        }
+        if (match(TokenType.FALSE)) {
+            return new BooleanLiteral(false, previous().span());
+        }
+        if (match(TokenType.THIS)) {
+            return new ThisExpr(previous().span());
+        }
+        if (check(TokenType.IDENTIFIER)) {
+            Token token = advance();
+            String name = token.lexeme();
+            if (match(TokenType.LPAREN)) {
+                List<Expression> args = parseArguments();
+                Token rparen = consume(TokenType.RPAREN, "Expected ')'");
+                Span span = token.span().merge(rparen.span());
+                return new ConstructorCall(name, args, span);
+            }
+            return new IdentifierExpr(name, token.span());
+        }
+        error("Expected expression");
+        return new IdentifierExpr("ERROR", peek().span());
+    }
+
+    /**
+     * Parses a comma-separated list of argument expressions (NEW in Phase 2).
+     * Grammar: Arguments → Expression { , Expression }
+     *
+     * Note: Call this AFTER consuming the opening '('
+     */
+    private List<Expression> parseArguments() {
+        List<Expression> args = new ArrayList<>();
+        if (check(TokenType.RPAREN)) {
+            return args;
+        }
+        args.add(parseExpression());
+        while (match(TokenType.COMMA)) {
+            args.add(parseExpression());
+        }
+        return args;
     }
 }

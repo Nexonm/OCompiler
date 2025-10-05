@@ -2,6 +2,7 @@ import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenPrinter;
 import parser.Parser;
+import parser.ast.ASTNode;
 import parser.ast.declarations.Program;
 
 import java.util.List;
@@ -18,7 +19,14 @@ public class LexerExample {
     private static void test() {
         System.out.println("=== Simple test for lexer ===\n");
         String code = """
-                class Test is
+                class Calculator is
+                    var result : Integer(0)
+                    this() is
+                    end
+                    method add(a : Integer, b : Integer) : Integer is
+                        return Integer(42)
+                    end
+                    method getValue() : Integer
                 end
                 """;
         // 1. Tokenize
@@ -38,6 +46,9 @@ public class LexerExample {
             parser.getErrors().forEach(System.err::println);
         } else {
             System.out.println("Success! Parsed " + ast.getClassCount() + " classes");
+        }
+        for (ASTNode node : ast.getClasses()){
+            System.out.println(node.toString());
         }
     }
 }
