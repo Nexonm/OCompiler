@@ -140,7 +140,7 @@ public class Lexer {
 
     /**
      * Tokenizes a numeric literal (integer or real).
-     * Supports patterns like: 123, 3.14, 0.5, 42.0
+     * Validates against malformed patterns like multiple decimal points or trailing dots.
      *
      * @param startLine   current line
      * @param startColumn current start position
@@ -151,22 +151,39 @@ public class Lexer {
         column--;
         int start = current;
         boolean isReal = false;
+        int dotCount = 0;
+        boolean hasDigitsAfterLastDot = true;
         // Consume integer part
         while (!isAtEnd() && isDigit(peek())) {
             next();
         }
-        // Check for decimal point followed by digits
-        if (!isAtEnd() && peek() == '.' && isDigit(peekNext())) {
-            isReal = true;
-            // Consume fractional part
-            do {
-                next(); // First call consumes '.'
-            } while (!isAtEnd() && isDigit(peek()));
+        // Check for decimal points followed by digits
+        while (!isAtEnd() && peek() == '.' && peekNext() != '\0' && isDigit(peekNext())) {
+            dotCount++;
+            next(); // consume '.'
+            hasDigitsAfterLastDot = false;
+            // Consume digits after this dot
+            while (!isAtEnd() && (peek() != TokenType.RPAREN.getRepresentation().charAt(0))) {
+                hasDigitsAfterLastDot = true;
+                if (peek() == '.') {
+                    dotCount++;
+                }
+                next();
+            }
         }
         String lexeme = source.substring(start, current);
-        TokenType type = isReal ? TokenType.REAL_LITERAL : TokenType.INTEGER_LITERAL;
+        int lexemeLength = current - start;
         Span span = new Span(startLine, startColumn, column);
-        tokens.add(new Token(type, lexeme, span));
+        // Validate: check for multiple decimal points or trailing dot
+        if (dotCount > 1) {
+            reportError("Invalid numeric literal: multiple decimal points", startLine, startColumn, lexemeLength);
+        } else if (dotCount == 1 && !hasDigitsAfterLastDot) {
+            reportError("Invalid numeric literal: trailing decimal point", startLine, startColumn, lexemeLength);
+        } else {
+            isReal = (dotCount == 1);
+            TokenType type = isReal ? TokenType.REAL_LITERAL : TokenType.INTEGER_LITERAL;
+            tokens.add(new Token(type, lexeme, span));
+        }
     }
 
     /**
@@ -334,24 +351,36 @@ public class Lexer {
 
     /**
      * Records a lexical error with span information.
+     * Automatically calculates the size of the error by consuming problematic characters.
      *
      * @param message     error message
      * @param startLine   line where the problem found
      * @param startColumn start of problematic sequence
      */
     private void reportError(String message, int startLine, int startColumn) {
-        int start = current-1;
         int length = 1;
         while (!isAtEnd() && !isOperator(peek()) && !isEndChar(peek())) {
             next();
             length++;
         }
-        Span errorSpan = new Span(startLine, startColumn, startColumn+length);
-        String error = String.format("Lexical error at %s: %s",
-                errorSpan.toErrorString(), message);
+        reportError(message, startLine, startColumn, length);
+    }
+
+    /**
+     * Records a lexical error with span information and explicit size.
+     *
+     * @param message     error message
+     * @param startLine   line where the problem found
+     * @param startColumn start of problematic sequence
+     * @param length      size of the error lexeme
+     */
+    private void reportError(String message, int startLine, int startColumn, int length) {
+        int start = current - length;
+        Span errorSpan = new Span(startLine, startColumn, startColumn + length);
+        String error = String.format("Lexical error at %s: %s", errorSpan.toErrorString(), message);
         errors.add(error);
         // Add an error token to continue parsing
-        tokens.add(new Token(TokenType.ERROR, source.substring(start, start+length), errorSpan));
+        tokens.add(new Token(TokenType.ERROR, source.substring(start, start + length), errorSpan));
     }
 
     /**
@@ -365,10 +394,14 @@ public class Lexer {
         return TokenType.getOperators().contains(type);
     }
 
-    private boolean isEndChar(char c){
-        switch (c){
-            case ' ', '\r', '\t', '\n' -> {return true;}
-            default -> {return false;}
+    private boolean isEndChar(char c) {
+        switch (c) {
+            case ' ', '\r', '\t', '\n' -> {
+                return true;
+            }
+            default -> {
+                return false;
+            }
         }
     }
 

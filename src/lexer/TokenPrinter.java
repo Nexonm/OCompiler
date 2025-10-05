@@ -46,12 +46,12 @@ public class TokenPrinter {
         System.out.println("=".repeat(60));
         System.out.printf("Total tokens: %d%n", tokens.size() - 1); // Exclude EOF
         if (!errors.isEmpty()) {
-            System.err.println("\nErrors:");
+            System.err.printf("\nErrors: %d\n", errors.size());
             int i = 0;
             for (Token token : tokens) {
                 if (token.type() == TokenType.ERROR) {
                     System.err.println("\nError found:");
-                    System.err.println(errors.get(i));
+                    System.err.println(errors.get(i++));
                     highlightSpan(token.span());
                 }
             }
