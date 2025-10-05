@@ -1,6 +1,8 @@
 import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenPrinter;
+import parser.Parser;
+import parser.ast.declarations.Program;
 
 import java.util.List;
 
@@ -16,18 +18,26 @@ public class LexerExample {
     private static void test() {
         System.out.println("=== Simple test for lexer ===\n");
         String code = """
-                class Test is !!! !928
-                    var x := Integer(42.2) // Some comment
-                    method increment() : Integer is
-                        return x.Plus(1)
-                    end
+                class Test is
                 end
                 """;
+        // 1. Tokenize
         Lexer lexer = new Lexer(code);
         List<Token> tokens = lexer.tokenize();
         List<String> errors = lexer.getErrors();
         TokenPrinter printer = new TokenPrinter(tokens, errors, code);
         printer.printTokens();
         System.out.println("\n");
+
+        // Step 2: Parse (just pass tokens!)
+        Parser parser = new Parser(tokens);
+        Program ast = parser.parse();
+
+        // Step 3: Check results
+        if (parser.hasErrors()) {
+            parser.getErrors().forEach(System.err::println);
+        } else {
+            System.out.println("Success! Parsed " + ast.getClassCount() + " classes");
+        }
     }
 }
