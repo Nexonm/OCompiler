@@ -356,15 +356,95 @@ public class Parser {
      * Grammar: Statement → ReturnStatement | Assignment | IfStatement | WhileLoop
      */
     private Statement parseStatement() {
-        // Return statement
         if (check(TokenType.RETURN)) {
             return parseReturnStatement();
         }
-
-        // For now, treat unknown as error and skip
-        error("Expected statement (currently only 'return' supported in Phase 3)");
+        if (check(TokenType.IF)) {
+            return parseIfStatement();
+        }
+        if (check(TokenType.WHILE)) {
+            return parseWhileLoop();
+        }
+        if (check(TokenType.IDENTIFIER)) {
+            int saved = current;
+            Token id = advance();
+            if (check(TokenType.ASSIGNMENT)) {
+                current = saved;
+                return parseAssignment();
+            }
+            current = saved;
+        }
+        error("Expected statement (return, if, while, or assignment)");
         advance();
         return new ReturnStatement(null, previous().span());
+    }
+
+    /**
+     * Parses an assignment statement.
+     * Grammar: Assignment → Identifier := Expression
+     * Example: count := Integer(42)
+     *
+     * @return Assignment statement node
+     */
+    private Assignment parseAssignment() {
+        Token targetToken = consume(TokenType.IDENTIFIER, "Expected variable name");
+        String targetName = targetToken.lexeme();
+        consume(TokenType.ASSIGNMENT, "Expected ':='");
+        Expression value = parseExpression();
+        Span span = targetToken.span().merge(value.getSpan());
+        return new Assignment(targetName, value, span);
+    }
+
+    /**
+     * Parses an if-then-else statement.
+     * Grammar: IfStatement → if Expression then Body [ else Body ] end
+     * Example: if x.Greater(y) then return x else return y end
+     *
+     * The else branch is optional. Both then and else branches can contain
+     * multiple statements.
+     *
+     * @return IfStatement node with condition, then-branch, and optional else-branch
+     */
+    private IfStatement parseIfStatement() {
+        Token ifToken = consume(TokenType.IF, "Expected 'if'");
+        Expression condition = parseExpression();
+        consume(TokenType.THEN, "Expected 'then'");
+        List<Statement> thenBranch = new ArrayList<>();
+        while (!check(TokenType.ELSE) && !check(TokenType.END) && !isAtEnd()) {
+            thenBranch.add(parseStatement());
+        }
+        List<Statement> elseBranch = null;
+        if (match(TokenType.ELSE)) {
+            elseBranch = new ArrayList<>();
+            while (!check(TokenType.END) && !isAtEnd()) {
+                elseBranch.add(parseStatement());
+            }
+        }
+        Token endToken = consume(TokenType.END, "Expected 'end'");
+        Span span = ifToken.span().merge(endToken.span());
+        return new IfStatement(condition, thenBranch, elseBranch, span);
+    }
+
+    /**
+     * Parses a while loop statement.
+     * Grammar: WhileLoop → while Expression loop Body end
+     * Example: while count.Greater(Integer(0)) loop count := count.Minus(Integer(1)) end
+     *
+     * The loop body can contain multiple statements.
+     *
+     * @return WhileLoop node with condition and body statements
+     */
+    private WhileLoop parseWhileLoop() {
+        Token whileToken = consume(TokenType.WHILE, "Expected 'while'");
+        Expression condition = parseExpression();
+        consume(TokenType.LOOP, "Expected 'loop'");
+        List<Statement> body = new ArrayList<>();
+        while (!check(TokenType.END) && !isAtEnd()) {
+            body.add(parseStatement());
+        }
+        Token endToken = consume(TokenType.END, "Expected 'end'");
+        Span span = whileToken.span().merge(endToken.span());
+        return new WhileLoop(condition, body, span);
     }
 
     /**
@@ -397,8 +477,23 @@ public class Parser {
     }
 
     private Expression parseExpression() {
-        return parsePrimary();
+        Expression expr = parsePrimary();
+        while (match(TokenType.DOT)) {
+            Token nameToken = consume(TokenType.IDENTIFIER, "Expected member or method name");
+            String name = nameToken.lexeme();
+            if (match(TokenType.LPAREN)) {
+                List<Expression> args = parseArguments();
+                Token rparen = consume(TokenType.RPAREN, "Expected ')'");
+                Span span = expr.getSpan().merge(rparen.span());
+                expr = new MethodCall(expr, name, args, span);
+            } else {
+                Span span = expr.getSpan().merge(nameToken.span());
+                expr = new MemberAccess(expr, name, span);
+            }
+        }
+        return expr;
     }
+
 
     /**
      * Parses a primary expression

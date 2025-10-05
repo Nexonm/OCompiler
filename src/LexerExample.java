@@ -20,15 +20,27 @@ public class LexerExample {
     private static void test() {
         System.out.println("=== Simple test for lexer ===\n");
         String code = """
-                class Calculator is
-                    var result : Integer(0)
-                    this() is
-                    end
-                    method add(a : Integer, b : Integer) : Integer is
-                        return Integer(42)
-                    end
-                    method getValue() : Integer
-                end
+                class Counter is
+                       var count : Integer(0)
+                
+                       method increment() is
+                           count := count.add(Integer(1))
+                       end
+                
+                       method getValue() : Integer is
+                           if count.graterThan(Integer(0)) then
+                               return count
+                           else
+                               return Integer(0)
+                           end
+                       end
+                
+                       method reset() is
+                           while count.graterThan(Integer(5)) loop
+                               count := count.minus(Integer(1))
+                           end
+                       end
+                   end
                 """;
         // 1. Tokenize
         Lexer lexer = new Lexer(code);

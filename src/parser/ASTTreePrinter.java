@@ -159,6 +159,28 @@ public class ASTTreePrinter {
                 String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
                 visitExpression(ret.getValueOrNull(), newIndent, true);
             }
+        } else if (stmt instanceof Assignment assign) {
+            output.append("Assignment: ").append(assign.getTargetName()).append("\n");
+            String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
+            visitExpression(assign.getValue(), newIndent, true);
+        } else if (stmt instanceof IfStatement ifStmt) {
+            output.append("IfStatement\n");
+            String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
+            output.append(newIndent).append("├─ condition:\n");
+            visitExpression(ifStmt.getCondition(), newIndent + VERTICAL, true);
+            output.append(newIndent).append("├─ then\n");
+            visitStatements(ifStmt.getThenBranch(), newIndent + VERTICAL);
+            if (ifStmt.hasElseBranch()) {
+                output.append(newIndent).append("└─ else:\n");
+                visitStatements(ifStmt.getElseBranch(), newIndent + SPACE);
+            }
+        } else if (stmt instanceof WhileLoop whileLoop) {
+            output.append("WhileLoop\n");
+            String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
+            output.append(newIndent).append("├─ condition:\n");
+            visitExpression(whileLoop.getCondition(), newIndent + VERTICAL, true);
+            output.append(newIndent).append("└─ body:\n");
+            visitStatements(whileLoop.getBody(), newIndent + SPACE);
         } else {
             output.append(stmt.getClass().getSimpleName()).append("\n");
         }
@@ -187,16 +209,33 @@ public class ASTTreePrinter {
         } else if (expr instanceof ConstructorCall call) {
             output.append("ConstructorCall: ").append(call.getClassName());
             output.append("(").append(call.getArgumentCount()).append(" args)\n");
-
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             var args = call.getArguments();
             for (int i = 0; i < args.size(); i++) {
                 boolean argIsLast = (i == args.size() - 1);
                 visitExpression(args.get(i), newIndent, argIsLast);
             }
+        } else if (expr instanceof MethodCall call) {
+            output.append("MethodCall: ").append(call.getMethodName());
+            output.append("(").append(call.getArgumentCount()).append(" args)\n");
+            String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
+            output.append(newIndent).append("├─ target:\n");
+            visitExpression(call.getTarget(), newIndent + VERTICAL, true);
+            if (call.getArgumentCount() > 0) {
+                output.append(newIndent).append("└─ arguments:\n");
+                var args = call.getArguments();
+                for (int i = 0; i < args.size(); i++) {
+                    visitExpression(args.get(i), newIndent + SPACE, i == args.size() - 1);
+                }
+            }
+        } else if (expr instanceof MemberAccess access) {
+            output.append("MemberAccess: ").append(access.getMemberName()).append("\n");
+            String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
+            visitExpression(access.getTarget(), newIndent, true);
         } else {
             output.append(expr.getClass().getSimpleName()).append("\n");
         }
+
     }
 
     /**
