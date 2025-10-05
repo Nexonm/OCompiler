@@ -14,21 +14,21 @@ import java.util.Optional;
  * <p>
  * Grammar:
  * {@code ClassDeclaration → class Identifier [extends Identifier]
- *                            is { MemberDeclaration } end}
+ * is { MemberDeclaration } end}
  * <p>
  * Example:
  * {@code
  * class Animal is
- *     var name : String("Default")
- *     method makeSound() : Integer is
- *         return Integer(0)
- *     end
+ * var name : String("Default")
+ * method makeSound() : Integer is
+ * return Integer(0)
+ * end
  * end}
- *<p>
+ * <p>
  * {@code
  * Example Result:
  * class Dog extends Animal is
- *     // members...
+ * // members...
  * end}
  */
 public class ClassDecl extends ASTNode {
@@ -39,10 +39,10 @@ public class ClassDecl extends ASTNode {
     /**
      * Creates a class declaration node.
      *
-     * @param name The name of the class
+     * @param name          The name of the class
      * @param baseClassName The name of the base class (null if no extends)
-     * @param members List of member declarations (variables, methods, constructors)
-     * @param span Position in source code
+     * @param members       List of member declarations (variables, methods, constructors)
+     * @param span          Position in source code
      */
     public ClassDecl(String name, String baseClassName,
                      List<MemberDecl> members, Span span) {
@@ -54,6 +54,7 @@ public class ClassDecl extends ASTNode {
 
     /**
      * Gets the class name.
+     *
      * @return Class name identifier
      */
     public String getName() {
@@ -62,6 +63,7 @@ public class ClassDecl extends ASTNode {
 
     /**
      * Gets the base class name if this class extends another.
+     *
      * @return Optional containing base class name, or empty if no inheritance
      */
     public Optional<String> getBaseClassName() {
@@ -70,6 +72,7 @@ public class ClassDecl extends ASTNode {
 
     /**
      * Checks if this class extends another class.
+     *
      * @return true if extends clause present, false otherwise
      */
     public boolean hasBaseClass() {
@@ -78,6 +81,7 @@ public class ClassDecl extends ASTNode {
 
     /**
      * Gets the base class name (may be null).
+     *
      * @return Base class name or null
      */
     public String getBaseClassNameOrNull() {
@@ -86,6 +90,7 @@ public class ClassDecl extends ASTNode {
 
     /**
      * Gets the list of member declarations.
+     *
      * @return Unmodifiable list of members (variables, methods, constructors)
      */
     public List<MemberDecl> getMembers() {
@@ -94,6 +99,7 @@ public class ClassDecl extends ASTNode {
 
     /**
      * Gets the number of members in this class.
+     *
      * @return Member count
      */
     public int getMemberCount() {
@@ -102,6 +108,7 @@ public class ClassDecl extends ASTNode {
 
     /**
      * Checks if the class has no members (empty class).
+     *
      * @return true if no members, false otherwise
      */
     public boolean isEmpty() {
@@ -117,8 +124,18 @@ public class ClassDecl extends ASTNode {
     @Override
     public String toString() {
         String inheritance = hasBaseClass() ? " extends " + baseClassName : "";
-        return String.format("ClassDecl(%s%s, %d members)",
-                name, inheritance, members.size());
+        StringBuilder builder = new StringBuilder(
+                String.format("ClassDecl(%s%s, %d members)", name, inheritance, members.size())
+        );
+        if (members.isEmpty()) {
+            return builder.toString();
+        } else {
+
+            for (ASTNode node : members) {
+                builder.append(node.toString()).append("\n");
+            }
+            return builder.toString();
+        }
     }
 }
 
