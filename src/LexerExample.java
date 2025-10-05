@@ -50,6 +50,12 @@ public class LexerExample {
         printer.printTokens();
         System.out.println("\n");
 
+        if (!errors.isEmpty()){
+            System.err.println("Cannot start Parsing stage because of errors!");
+            return;
+        }
+        System.out.println("=== Parsing stage ===");
+
         // Step 2: Parse (just pass tokens!)
         Parser parser = new Parser(tokens);
         Program ast = parser.parse();
