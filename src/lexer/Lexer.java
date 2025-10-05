@@ -134,6 +134,9 @@ public class Lexer {
                 }
             }
 
+            // String literals
+            case '"' -> tokenizeString(startLine, startColumn);
+
             default -> {
                 if (isDigit(c)) {
                     tokenizeNumber(startLine, startColumn);
@@ -187,6 +190,36 @@ public class Lexer {
         }
         // Both parsing attempts failed - report error
         reportError("Invalid numeric literal", startLine, startColumn, lexeme.length());
+    }
+
+
+    /**
+     * Tokenizes a string literal.
+     *
+     * @param startLine   The starting line of the string token.
+     * @param startColumn The starting column of the string token.
+     */
+    private void tokenizeString(int startLine, int startColumn) {
+        // We already consumed the opening '"'
+        int start = current - 1;
+        while (!isAtEnd() && peek() != '"') {
+            if (peek() == '\n') {
+                reportError("Unterminated string.", startLine, startColumn, current - start);
+                line++;
+                column = 0;
+                return;
+            }
+            next();
+        }
+        if (isAtEnd()) {
+            reportError("Unterminated string.", startLine, startColumn, current - start);
+            return;
+        }
+        // Consume the closing '"'
+        next();
+        String lexeme = source.substring(start, current);
+        Span span = Span.singleLine(startLine, startColumn, column);
+        tokens.add(new Token(TokenType.STRING_LITERAL, lexeme, span));
     }
 
 

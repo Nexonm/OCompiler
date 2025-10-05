@@ -89,6 +89,7 @@ public record Token(TokenType type, String lexeme, Span span) {
     public boolean isLiteral() {
         return type == TokenType.INTEGER_LITERAL ||
                 type == TokenType.REAL_LITERAL ||
+                type == TokenType.STRING_LITERAL ||
                 type == TokenType.TRUE ||
                 type == TokenType.FALSE;
     }
