@@ -83,6 +83,14 @@ public class Lexer {
             case ',' -> addSingleCharToken(TokenType.COMMA, startLine, startColumn);
             case '.' -> addSingleCharToken(TokenType.DOT, startLine, startColumn);
 
+            case '-' -> {
+                if (isDigit(peek())) {
+                    tokenizeNumber(startLine, startColumn);
+                } else {
+                    reportError("Unexpected character '-'", startLine, startColumn);
+                }
+            }
+
             // Multi-character tokens starting with ':'
             case ':' -> {
                 if (match('=')) {
@@ -142,8 +150,8 @@ public class Lexer {
      * Tokenizes a numeric literal (integer or real).
      * Reads everything until RPAREN, then validates if it's a valid integer or double.
      *
-     * @param startLine   current line
-     * @param startColumn current start position
+     * @param startLine   The starting line of the number token.
+     * @param startColumn The starting column of the number token.
      */
     private void tokenizeNumber(int startLine, int startColumn) {
         // Back up to include the first digit we already consumed
@@ -153,6 +161,7 @@ public class Lexer {
         // Read everything until RPAREN
         while (!isAtEnd() && peek() != ')') {
             next();
+
         }
         String lexeme = source.substring(start, current);
         Span span = Span.singleLine(startLine, startColumn, column);
@@ -411,3 +420,4 @@ public class Lexer {
 
 
 }
+
