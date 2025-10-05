@@ -140,7 +140,7 @@ public class Lexer {
 
     /**
      * Tokenizes a numeric literal (integer or real).
-     * Validates against malformed patterns like multiple decimal points or trailing dots.
+     * Reads everything until RPAREN, then validates if it's a valid integer or double.
      *
      * @param startLine   current line
      * @param startColumn current start position
@@ -150,41 +150,36 @@ public class Lexer {
         current--;
         column--;
         int start = current;
-        boolean isReal = false;
-        int dotCount = 0;
-        boolean hasDigitsAfterLastDot = true;
-        // Consume integer part
-        while (!isAtEnd() && isDigit(peek())) {
+        // Read everything until RPAREN
+        while (!isAtEnd() && peek() != ')') {
             next();
         }
-        // Check for decimal points followed by digits
-        while (!isAtEnd() && peek() == '.' && peekNext() != '\0' && isDigit(peekNext())) {
-            dotCount++;
-            next(); // consume '.'
-            hasDigitsAfterLastDot = false;
-            // Consume digits after this dot
-            while (!isAtEnd() && (peek() != TokenType.RPAREN.getRepresentation().charAt(0))) {
-                hasDigitsAfterLastDot = true;
-                if (peek() == '.') {
-                    dotCount++;
-                }
-                next();
-            }
-        }
         String lexeme = source.substring(start, current);
-        int lexemeLength = current - start;
         Span span = new Span(startLine, startColumn, column);
-        // Validate: check for multiple decimal points or trailing dot
-        if (dotCount > 1) {
-            reportError("Invalid numeric literal: multiple decimal points", startLine, startColumn, lexemeLength);
-        } else if (dotCount == 1 && !hasDigitsAfterLastDot) {
-            reportError("Invalid numeric literal: trailing decimal point", startLine, startColumn, lexemeLength);
-        } else {
-            isReal = (dotCount == 1);
-            TokenType type = isReal ? TokenType.REAL_LITERAL : TokenType.INTEGER_LITERAL;
-            tokens.add(new Token(type, lexeme, span));
+        // Try to parse as integer first
+        try {
+            Integer.parseInt(lexeme);
+            tokens.add(new Token(TokenType.INTEGER_LITERAL, lexeme, span));
+            return;
+        } catch (NumberFormatException e) {
+            // Not an integer, try double
         }
+        // Try to parse as double
+        try {
+            Double.parseDouble(lexeme);
+            // Check if ends with dot, this is not valid in O language but valid in Java
+            if (lexeme.endsWith(".")) {
+                reportError("Invalid number format, should not end with '.'!", startLine, startColumn, lexeme.length());
+            }
+            tokens.add(new Token(TokenType.REAL_LITERAL, lexeme, span));
+            return;
+        } catch (NumberFormatException e) {
+            // Not a valid number at all
+        }
+        // Both parsing attempts failed - report error
+        reportError("Invalid numeric literal", startLine, startColumn, lexeme.length());
     }
+
 
     /**
      * Tokenizes an identifier or keyword.
