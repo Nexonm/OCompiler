@@ -155,7 +155,7 @@ public class Lexer {
             next();
         }
         String lexeme = source.substring(start, current);
-        Span span = new Span(startLine, startColumn, column);
+        Span span = Span.singleLine(startLine, startColumn, column);
         // Try to parse as integer first
         try {
             Integer.parseInt(lexeme);
@@ -199,7 +199,7 @@ public class Lexer {
         }
         String lexeme = source.substring(start, current);
         TokenType type = TokenType.fromString(lexeme);
-        Span span = new Span(startLine, startColumn, column);
+        Span span = Span.singleLine(startLine, startColumn, column);
         tokens.add(new Token(type, lexeme, span));
     }
 
@@ -340,7 +340,7 @@ public class Lexer {
      * @param startColumn start of token span
      */
     private void addMultiCharToken(TokenType type, String lexeme, int startLine, int startColumn) {
-        Span span = new Span(startLine, startColumn, column);
+        Span span = Span.singleLine(startLine, startColumn, column);
         tokens.add(new Token(type, lexeme, span));
     }
 
@@ -371,7 +371,7 @@ public class Lexer {
      */
     private void reportError(String message, int startLine, int startColumn, int length) {
         int start = current - length;
-        Span errorSpan = new Span(startLine, startColumn, startColumn + length);
+        Span errorSpan = Span.singleLine(startLine, startColumn, startColumn + length);
         String error = String.format("Lexical error at %s: %s", errorSpan.toErrorString(), message);
         errors.add(error);
         // Add an error token to continue parsing

@@ -4,7 +4,7 @@ package lexer;
  * Represents a span of text in the source code with precise positioning.
  * Provides line number and character range information for tokens.
  */
-public record Span(int line, int start, int end) {
+public record Span(int line, int start, int endLine, int end) {
 
     /**
      * Creates a new span with validation.
@@ -20,9 +20,21 @@ public record Span(int line, int start, int end) {
         if (start < 0) {
             throw new IllegalArgumentException("Error creating a new Span: start must be >= 0, got: " + start);
         }
+        if (endLine < 0) {
+            throw new IllegalArgumentException(
+                    "Error creating Span: endLine must be >= 0, got: " + endLine);
+        }
+        if (endLine < line) {
+            throw new IllegalArgumentException(
+                    "Error creating Span: endLine cannot be before startLine");
+        }
         if (end < start) {
             throw new IllegalArgumentException("Error creating a new Span: end must be >= start, got start=" + start +
                     ", end=" + end);
+        }
+        if (endLine == line && end < start) {
+            throw new IllegalArgumentException(
+                    "Error creating Span: on same line, endColumn must be >= startColumn");
         }
     }
 
@@ -36,6 +48,18 @@ public record Span(int line, int start, int end) {
     }
 
     /**
+     * Creates a single-line span (old constructor for backward compatibility).
+     *
+     * @param line The line number (0-based)
+     * @param start The starting column
+     * @param end The ending column
+     * @return Single-line span
+     */
+    public static Span singleLine(int line, int start, int end) {
+        return new Span(line, start, line, end);
+    }
+
+    /**
      * Creates a span for a single character.
      *
      * @param line     The line number
@@ -43,7 +67,7 @@ public record Span(int line, int start, int end) {
      * @return A span covering one character
      */
     public static Span single(int line, int position) {
-        return new Span(line, position, position + 1);
+        return new Span(line, position, line, position + 1);
     }
 
     /**
@@ -55,21 +79,41 @@ public record Span(int line, int start, int end) {
      * @return A zero-width span
      */
     public static Span empty(int line, int position) {
-        return new Span(line, position, position);
+        return new Span(line, position, line, position);
     }
 
     /**
-     * Combines this span with another span to create a larger span. Works only with
-     * spans that have the same line.
+     * Combines this span with another span to create a larger span.
      *
      * @param other The other span to merge with
      * @return A new span covering both spans
      */
     public Span merge(Span other) {
-        if (this.line != other.line) {
-            throw new IllegalArgumentException("Error merging two spans: cannot merge spans from different lines");
+        // Find earliest start
+        int newStartLine = Math.min(this.line, other.line);
+        int newStartColumn;
+        if (this.line < other.line) {
+            newStartColumn = this.start;
+        } else if (this.line > other.line) {
+            newStartColumn = other.start;
+        } else {
+            // Same start line, take minimum column
+            newStartColumn = Math.min(this.start, other.start);
         }
-        return new Span(line, Math.min(start, other.start), Math.max(end, other.end));
+
+        // Find latest end
+        int newEndLine = Math.max(this.endLine, other.endLine);
+        int newEndColumn;
+        if (this.endLine > other.endLine) {
+            newEndColumn = this.end;
+        } else if (this.endLine < other.endLine) {
+            newEndColumn = other.end;
+        } else {
+            // Same end line, take maximum column
+            newEndColumn = Math.max(this.end, other.end);
+        }
+
+        return new Span(newStartLine, newStartColumn, newEndLine, newEndColumn);
     }
 
     /**
