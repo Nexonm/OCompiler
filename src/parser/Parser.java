@@ -266,7 +266,13 @@ public class Parser {
             body = parseMethodBody();
             Token endToken = consume(TokenType.END, "Expected 'end'");
             endSpan = endToken.span();
+        } else if (match(TokenType.ARROW)) {
+            Expression value = parseExpression();
+            body = new ArrayList<>();
+            body.add(new ReturnStatement(value, value.getSpan()));
+            endSpan = value.getSpan();
         }
+
         Span span = methodToken.span().merge(endSpan);
         return new MethodDecl(methodName, parameters, returnTypeName, body, span);
     }
