@@ -1,3 +1,5 @@
+package tests;
+
 import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenPrinter;
