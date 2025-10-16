@@ -362,6 +362,10 @@ public class Parser {
      * Grammar: Statement → ReturnStatement | Assignment | IfStatement | WhileLoop
      */
     private Statement parseStatement() {
+        if (check(TokenType.VAR)) {
+            VariableDecl decl = parseVariableDeclaration();
+            return new VariableDeclStatement(decl, decl.getSpan());
+        }
         if (check(TokenType.RETURN)) {
             return parseReturnStatement();
         }
@@ -380,7 +384,7 @@ public class Parser {
             }
             current = saved;
         }
-        error("Expected statement (return, if, while, or assignment)");
+        error("Expected statement (var, return, if, while, or assignment)");
         advance();
         return new ReturnStatement(null, previous().span());
     }

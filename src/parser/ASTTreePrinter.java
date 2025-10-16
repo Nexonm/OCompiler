@@ -181,6 +181,11 @@ public class ASTTreePrinter {
             visitExpression(whileLoop.getCondition(), newIndent + VERTICAL, true);
             output.append(newIndent).append("└─ body:\n");
             visitStatements(whileLoop.getBody(), newIndent + SPACE);
+        } else if (stmt instanceof VariableDeclStatement varDeclStmt) {
+            var varDecl = varDeclStmt.getVariableDecl();
+            output.append("VariableDecl: ").append(varDecl.getName()).append("\n");
+            String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
+            visitExpression(varDecl.getInitializer(), newIndent, true);
         } else {
             output.append(stmt.getClass().getSimpleName()).append("\n");
         }
