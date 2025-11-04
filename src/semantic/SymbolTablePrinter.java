@@ -2,8 +2,7 @@ package semantic;
 
 import semantic.symbols.*;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Pretty-prints the symbol table in a tree-like, human-readable format.
@@ -79,7 +78,7 @@ public class SymbolTablePrinter {
     }
 
     private void printGlobalScope(Scope globalScope) {
-        println(color(ANSI_BOLD + ANSI_BLUE, "📦 Global Scope"));
+        println(color(ANSI_BOLD + ANSI_BLUE, "Global Scope"));
         println();
 
         // Collect all class symbols using reflection on Scope
@@ -142,23 +141,71 @@ public class SymbolTablePrinter {
             printVariableSymbol(field, childIndent, isLastMember, "field");
         }
 
-        // Print methods
+        // Print methods (with overload handling)
+        Set<String> printedMethods = new HashSet<>();
         for (MethodSymbol method : methods.values()) {
             memberCount++;
             boolean isLastMember = (memberCount == totalMembers);
-            printMethodSymbol(method, childIndent, isLastMember);
+
+            // Group overloaded methods
+            String methodName = method.getName();
+            if (!printedMethods.contains(methodName)) {
+                // First time seeing this method name - get all overloads
+                List<MethodSymbol> overloads = classSymbol.getMethodsByName(methodName);
+
+                if (overloads.size() == 1) {
+                    // No overloading
+                    printMethodSymbol(overloads.get(0), childIndent, isLastMember);
+                } else {
+                    // Multiple overloads - print with group header
+                    String connector2 = isLastMember ? TREE_LAST : TREE_BRANCH;
+                    String groupIndent = childIndent + (isLastMember ? TREE_SPACE : TREE_VERTICAL);
+
+                    println(childIndent + connector2 + color(ANSI_BOLD + ANSI_BLUE, methodName)
+                            + color(ANSI_YELLOW, " (overloaded: " + overloads.size() + " variants)"));
+
+                    // Print each overload variant
+                    for (int i = 0; i < overloads.size(); i++) {
+                        boolean isLastOverload = (i == overloads.size() - 1);
+                        printMethodOverload(overloads.get(i), groupIndent, isLastOverload);
+                    }
+                }
+
+                printedMethods.add(methodName);
+            }
         }
     }
+
+    private void printMethodOverload(MethodSymbol method, String indent, boolean isLast) {
+        String connector = isLast ? TREE_LAST : TREE_BRANCH;
+
+        // Build signature
+        StringBuilder params = new StringBuilder("(");
+        for (int i = 0; i < method.getParameterTypes().size(); i++) {
+            if (i > 0) params.append(", ");
+            params.append(color(ANSI_CYAN, method.getParameterTypes().get(i)));
+        }
+        params.append(")");
+
+        // Return type
+        String returnType = "";
+        if (!method.isConstructor() && method.hasReturnType()) {
+            returnType = color(ANSI_GREEN, " : " + method.getReturnType());
+        } else if (!method.isConstructor()) {
+            returnType = color(ANSI_YELLOW, " : void");
+        }
+        println(indent + connector + "  " + params + returnType);
+    }
+
 
     private void printVariableSymbol(VariableSymbol variable, String indent, boolean isLast, String kind) {
         String connector = isLast ? TREE_LAST : TREE_BRANCH;
 
-        String icon = kind.equals("param") ? "📌" : "📦";
         String varName = color(ANSI_MAGENTA, variable.getName());
         String varType = color(ANSI_CYAN, ": " + variable.getType());
         String varKind = color(ANSI_YELLOW, " [" + kind + "]");
 
-        println(indent + connector + icon + " " + varName + varType + varKind);
+        println(indent + connector + " " + varName + varType + varKind);
     }
 
     private void printMethodSymbol(MethodSymbol method, String indent, boolean isLast) {
@@ -166,7 +213,6 @@ public class SymbolTablePrinter {
         String childIndent = indent + (isLast ? TREE_SPACE : TREE_VERTICAL);
 
         // Method header
-        String icon = method.isConstructor() ? "🏗️" : "⚙️";
         String methodName = color(ANSI_BOLD + ANSI_BLUE, method.getName());
 
         // Parameters
@@ -185,7 +231,7 @@ public class SymbolTablePrinter {
             returnType = color(ANSI_YELLOW, " : void");
         }
 
-        println(indent + connector + icon + "  " + methodName + params + returnType);
+        println(indent + connector + "  " + methodName + params + returnType);
 
         // Show parameter details if any
         if (!method.getParameterTypes().isEmpty()) {
@@ -195,7 +241,7 @@ public class SymbolTablePrinter {
                 String paramType = method.getParameterTypes().get(i);
                 String paramDisplay = color(ANSI_CYAN, "param" + i) +
                         color(ANSI_YELLOW, " : " + paramType);
-                println(childIndent + paramConnector + "📌 " + paramDisplay);
+                println(childIndent + paramConnector + " " + paramDisplay);
             }
         }
     }

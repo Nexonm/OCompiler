@@ -5,8 +5,6 @@ import parser.ASTTreePrinter;
 import parser.Parser;
 import parser.ast.declarations.Program;
 import semantic.SymbolTablePrinter;
-import semantic.symbols.ClassSymbol;
-import semantic.symbols.SymbolTable;
 import semantic.visitor.SymbolTableBuilder;
 
 import java.util.List;
@@ -28,6 +26,10 @@ public class Main {
 
                   method increment(b: Integer) is
                       count := count.Plus(b)
+                  end
+                  
+                  method increment() is
+                      count := count.Plus(Integer(1))
                   end
               end
               """;
