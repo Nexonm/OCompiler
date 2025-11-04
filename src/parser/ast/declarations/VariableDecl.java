@@ -50,7 +50,7 @@ public class VariableDecl extends MemberDecl {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitVariableDecl(this);
     }
 
     @Override

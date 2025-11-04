@@ -53,7 +53,7 @@ public class MethodCall extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitMethodCall(this);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class IdentifierExpr extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitIdentifierExpr(this);
     }
 
     @Override

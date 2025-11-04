@@ -33,7 +33,7 @@ public class IntegerLiteral extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitIntegerLiteral(this);
     }
 
     @Override

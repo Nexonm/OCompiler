@@ -1,6 +1,7 @@
 package parser.ast.declarations;
 
 import lexer.Span;
+import parser.ast.ASTVisitor;
 
 /**
  * Represents a method or constructor parameter.
@@ -45,6 +46,11 @@ public class Parameter {
      */
     public Span getSpan() {
         return span;
+    }
+
+    // todo: check if we need to extend parameter class from the ASTNode
+    public <T> T accept(ASTVisitor<T> visitor) {
+        return visitor.visitParameter(this);
     }
 
     @Override

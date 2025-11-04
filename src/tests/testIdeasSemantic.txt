@@ -1,0 +1,4 @@
+1. right number of variables in method call
+2. right order and type of variables in method call
+car(int, str, int) is not same as car(int, int, str)
+3.

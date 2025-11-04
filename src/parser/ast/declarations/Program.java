@@ -51,7 +51,7 @@ public class Program extends ASTNode {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitProgram(this);
     }
 
     @Override

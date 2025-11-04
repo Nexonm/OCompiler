@@ -56,7 +56,7 @@ public class IfStatement extends Statement {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitIfStatement(this);
     }
 
     @Override

@@ -30,7 +30,7 @@ public class RealLiteral extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitRealLiteral(this);
     }
 
     @Override

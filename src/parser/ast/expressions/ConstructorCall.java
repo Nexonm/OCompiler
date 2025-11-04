@@ -75,7 +75,7 @@ public class ConstructorCall extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitConstructorCall(this);
     }
 
     @Override

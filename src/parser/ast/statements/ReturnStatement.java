@@ -55,7 +55,7 @@ public class ReturnStatement extends Statement {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitReturnStatement(this);
     }
 
     @Override

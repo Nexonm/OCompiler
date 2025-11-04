@@ -22,7 +22,7 @@ public class ThisExpr extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitThisExpr(this);
     }
 
     @Override

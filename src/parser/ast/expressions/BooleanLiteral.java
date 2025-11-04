@@ -30,7 +30,7 @@ public class BooleanLiteral extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visitBooleanLiteral(this);
     }
 
     @Override

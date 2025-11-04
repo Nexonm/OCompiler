@@ -117,8 +117,7 @@ public class ClassDecl extends ASTNode {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        // Will be implemented in semantic analysis phase
-        return null;
+        return visitor.visitClassDecl(this);
     }
 
     @Override
