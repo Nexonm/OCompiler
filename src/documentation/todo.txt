@@ -1,0 +1,7 @@
+This is the main page where we list all things that are needed to be done.
+
+1. todo: add StringLiteral (expression, method in ASTVisitor interface, implementations of a method in all of the implementations of ASTVisitor)
+2.
+
+
+

@@ -6,10 +6,10 @@ import parser.ast.expressions.*;
 import parser.ast.statements.*;
 
 /**
- * Prints the AST in a beautiful tree structure.
+ * Prints the AST in a beautiful tree structure with ANSI colors.
  * Uses box-drawing characters for visual representation.
  *
- * Example output:
+ * Example output (with colors):
  * Program
  * └─ ClassDecl: Calculator
  *    ├─ VariableDecl: result
@@ -26,9 +26,27 @@ public class ASTTreePrinter {
     private static final String VERTICAL = "│  ";
     private static final String SPACE = "   ";
 
+    // ANSI Color Codes
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_BOLD = "\u001B[1m";
+    private static final String ANSI_CYAN = "\u001B[36m";
+    private static final String ANSI_GREEN = "\u001B[32m";
+    private static final String ANSI_YELLOW = "\u001B[33m";
+    private static final String ANSI_BLUE = "\u001B[34m";
+    private static final String ANSI_MAGENTA = "\u001B[35m";
+    private static final String ANSI_RED = "\u001B[31m";
+    private static final String ANSI_WHITE = "\u001B[37m";
+
+    private final boolean useColors;
+
     public ASTTreePrinter() {
+        this(true);
+    }
+
+    public ASTTreePrinter(boolean useColors) {
         this.output = new StringBuilder();
         this.indent = "";
+        this.useColors = useColors;
     }
 
     /**
@@ -39,14 +57,28 @@ public class ASTTreePrinter {
     public String print(Program program) {
         output = new StringBuilder();
         indent = "";
+        printHeader();
         visitProgram(program);
+        printEnd();
         return output.toString();
+    }
+
+    private void printHeader() {
+        String border = "═".repeat(70);
+        output.append(colorize(ANSI_CYAN, border)).append("\n");
+        output.append(colorize(ANSI_BOLD + ANSI_CYAN, centerText("AST TREE", 70))).append("\n");
+        output.append(colorize(ANSI_CYAN, border)).append("\n");
+    }
+
+    private void printEnd(){
+        String border = "═".repeat(70);
+        output.append("\n").append(colorize(ANSI_CYAN, border)).append("\n");
     }
 
     // ========== PROGRAM & CLASS ==========
 
     private void visitProgram(Program program) {
-        output.append("Program\n");
+        output.append(colorize(ANSI_BOLD + ANSI_CYAN, "Program")).append("\n");
 
         var classes = program.getClasses();
         for (int i = 0; i < classes.size(); i++) {
@@ -56,11 +88,13 @@ public class ASTTreePrinter {
     }
 
     private void visitClass(ClassDecl classDecl, boolean isLast) {
-        output.append(indent).append(isLast ? LAST_BRANCH : BRANCH);
-        output.append("ClassDecl: ").append(classDecl.getName());
+        output.append(indent).append(colorize(ANSI_WHITE, isLast ? LAST_BRANCH : BRANCH));
+        output.append(colorize(ANSI_BOLD + ANSI_GREEN, "ClassDecl")).append(": ");
+        output.append(colorize(ANSI_CYAN, classDecl.getName()));
 
         if (classDecl.hasBaseClass()) {
-            output.append(" extends ").append(classDecl.getBaseClassNameOrNull());
+            output.append(" ").append(colorize(ANSI_YELLOW, "extends"))
+                    .append(" ").append(colorize(ANSI_CYAN, classDecl.getBaseClassNameOrNull()));
         }
         output.append("\n");
 
@@ -78,15 +112,17 @@ public class ASTTreePrinter {
     }
 
     private void visitMember(MemberDecl member, String baseIndent, boolean isLast) {
-        output.append(baseIndent).append(isLast ? LAST_BRANCH : BRANCH);
+        output.append(baseIndent).append(colorize(ANSI_WHITE, isLast ? LAST_BRANCH : BRANCH));
 
         if (member instanceof VariableDecl var) {
-            output.append("VariableDecl: ").append(var.getName()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_GREEN, "VariableDecl")).append(": ");
+            output.append(colorize(ANSI_MAGENTA, var.getName())).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             visitExpression(var.getInitializer(), newIndent, true);
 
         } else if (member instanceof MethodDecl method) {
-            output.append("MethodDecl: ").append(method.getName());
+            output.append(colorize(ANSI_BOLD + ANSI_GREEN, "MethodDecl")).append(": ");
+            output.append(colorize(ANSI_BLUE, method.getName()));
             visitMethodSignature(method);
             output.append("\n");
 
@@ -94,12 +130,12 @@ public class ASTTreePrinter {
             if (method.hasBody()) {
                 visitStatements(method.getBodyOrNull(), newIndent);
             } else {
-                output.append(newIndent).append(LAST_BRANCH)
-                        .append("[forward declaration]\n");
+                output.append(newIndent).append(colorize(ANSI_WHITE, LAST_BRANCH))
+                        .append(colorize(ANSI_YELLOW, "[forward declaration]")).append("\n");
             }
 
         } else if (member instanceof ConstructorDecl ctor) {
-            output.append("ConstructorDecl");
+            output.append(colorize(ANSI_BOLD + ANSI_GREEN, "ConstructorDecl"));
             visitParameters(ctor.getParameters());
             output.append("\n");
 
@@ -109,35 +145,41 @@ public class ASTTreePrinter {
     }
 
     private void visitMethodSignature(MethodDecl method) {
-        output.append("(");
+        output.append(colorize(ANSI_WHITE, "("));
         var params = method.getParameters();
         for (int i = 0; i < params.size(); i++) {
-            if (i > 0) output.append(", ");
+            if (i > 0) output.append(colorize(ANSI_WHITE, ", "));
             Parameter p = params.get(i);
-            output.append(p.getName()).append(":").append(p.getTypeName());
+            output.append(colorize(ANSI_MAGENTA, p.getName()))
+                    .append(colorize(ANSI_WHITE, ":"))
+                    .append(colorize(ANSI_CYAN, p.getTypeName()));
         }
-        output.append(")");
+        output.append(colorize(ANSI_WHITE, ")"));
 
         if (method.hasReturnType()) {
-            output.append(" : ").append(method.getReturnTypeNameOrNull());
+            output.append(" ").append(colorize(ANSI_YELLOW, ":")).append(" ")
+                    .append(colorize(ANSI_CYAN, method.getReturnTypeNameOrNull()));
         }
     }
 
     private void visitParameters(java.util.List<Parameter> params) {
-        output.append("(");
+        output.append(colorize(ANSI_WHITE, "("));
         for (int i = 0; i < params.size(); i++) {
-            if (i > 0) output.append(", ");
+            if (i > 0) output.append(colorize(ANSI_WHITE, ", "));
             Parameter p = params.get(i);
-            output.append(p.getName()).append(":").append(p.getTypeName());
+            output.append(colorize(ANSI_MAGENTA, p.getName()))
+                    .append(colorize(ANSI_WHITE, ":"))
+                    .append(colorize(ANSI_CYAN, p.getTypeName()));
         }
-        output.append(")");
+        output.append(colorize(ANSI_WHITE, ")"));
     }
 
     // ========== STATEMENTS ==========
 
     private void visitStatements(java.util.List<Statement> statements, String baseIndent) {
         if (statements.isEmpty()) {
-            output.append(baseIndent).append(LAST_BRANCH).append("[empty body]\n");
+            output.append(baseIndent).append(colorize(ANSI_WHITE, LAST_BRANCH))
+                    .append(colorize(ANSI_YELLOW, "[empty body]")).append("\n");
             return;
         }
 
@@ -148,72 +190,86 @@ public class ASTTreePrinter {
     }
 
     private void visitStatement(Statement stmt, String baseIndent, boolean isLast) {
-        output.append(baseIndent).append(isLast ? LAST_BRANCH : BRANCH);
+        output.append(baseIndent).append(colorize(ANSI_WHITE, isLast ? LAST_BRANCH : BRANCH));
 
         if (stmt instanceof ReturnStatement ret) {
-            output.append("ReturnStatement");
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "ReturnStatement"));
             if (ret.isVoidReturn()) {
-                output.append(" (void)\n");
+                output.append(" ").append(colorize(ANSI_YELLOW, "(void)")).append("\n");
             } else {
                 output.append("\n");
                 String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
                 visitExpression(ret.getValueOrNull(), newIndent, true);
             }
         } else if (stmt instanceof Assignment assign) {
-            output.append("Assignment: ").append(assign.getTargetName()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "Assignment")).append(": ");
+            output.append(colorize(ANSI_MAGENTA, assign.getTargetName())).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             visitExpression(assign.getValue(), newIndent, true);
         } else if (stmt instanceof IfStatement ifStmt) {
-            output.append("IfStatement\n");
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "IfStatement")).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
-            output.append(newIndent).append("├─ condition:\n");
+            output.append(newIndent).append(colorize(ANSI_WHITE, "├─"))
+                    .append(" ").append(colorize(ANSI_YELLOW, "condition")).append(":\n");
             visitExpression(ifStmt.getCondition(), newIndent + VERTICAL, true);
-            output.append(newIndent).append("├─ then\n");
+            output.append(newIndent).append(colorize(ANSI_WHITE, "├─"))
+                    .append(" ").append(colorize(ANSI_YELLOW, "then")).append("\n");
             visitStatements(ifStmt.getThenBranch(), newIndent + VERTICAL);
             if (ifStmt.hasElseBranch()) {
-                output.append(newIndent).append("└─ else:\n");
+                output.append(newIndent).append(colorize(ANSI_WHITE, "└─"))
+                        .append(" ").append(colorize(ANSI_YELLOW, "else")).append(":\n");
                 visitStatements(ifStmt.getElseBranch(), newIndent + SPACE);
             }
         } else if (stmt instanceof WhileLoop whileLoop) {
-            output.append("WhileLoop\n");
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "WhileLoop")).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
-            output.append(newIndent).append("├─ condition:\n");
+            output.append(newIndent).append(colorize(ANSI_WHITE, "├─"))
+                    .append(" ").append(colorize(ANSI_YELLOW, "condition")).append(":\n");
             visitExpression(whileLoop.getCondition(), newIndent + VERTICAL, true);
-            output.append(newIndent).append("└─ body:\n");
+            output.append(newIndent).append(colorize(ANSI_WHITE, "└─"))
+                    .append(" ").append(colorize(ANSI_YELLOW, "body")).append(":\n");
             visitStatements(whileLoop.getBody(), newIndent + SPACE);
         } else if (stmt instanceof VariableDeclStatement varDeclStmt) {
             var varDecl = varDeclStmt.getVariableDecl();
-            output.append("VariableDecl: ").append(varDecl.getName()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_GREEN, "VariableDecl")).append(": ");
+            output.append(colorize(ANSI_MAGENTA, varDecl.getName())).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             visitExpression(varDecl.getInitializer(), newIndent, true);
         } else {
-            output.append(stmt.getClass().getSimpleName()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_RED, stmt.getClass().getSimpleName())).append("\n");
         }
     }
 
     // ========== EXPRESSIONS ==========
 
     private void visitExpression(Expression expr, String baseIndent, boolean isLast) {
-        output.append(baseIndent).append(isLast ? LAST_BRANCH : BRANCH);
+        output.append(baseIndent).append(colorize(ANSI_WHITE, isLast ? LAST_BRANCH : BRANCH));
 
         if (expr instanceof IntegerLiteral lit) {
-            output.append("IntegerLiteral: ").append(lit.getValue()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_MAGENTA, "IntegerLiteral")).append(": ");
+            output.append(colorize(ANSI_GREEN, String.valueOf(lit.getValue()))).append("\n");
 
         } else if (expr instanceof RealLiteral lit) {
-            output.append("RealLiteral: ").append(lit.getValue()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_MAGENTA, "RealLiteral")).append(": ");
+            output.append(colorize(ANSI_GREEN, String.valueOf(lit.getValue()))).append("\n");
 
         } else if (expr instanceof BooleanLiteral lit) {
-            output.append("BooleanLiteral: ").append(lit.getValue()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_MAGENTA, "BooleanLiteral")).append(": ");
+            output.append(colorize(ANSI_GREEN, String.valueOf(lit.getValue()))).append("\n");
 
         } else if (expr instanceof ThisExpr) {
-            output.append("ThisExpression\n");
+            output.append(colorize(ANSI_BOLD + ANSI_YELLOW, "ThisExpression")).append("\n");
 
         } else if (expr instanceof IdentifierExpr id) {
-            output.append("IdentifierExpr: ").append(id.getName()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_MAGENTA, "IdentifierExpr")).append(": ");
+            output.append(colorize(ANSI_CYAN, id.getName())).append("\n");
 
         } else if (expr instanceof ConstructorCall call) {
-            output.append("ConstructorCall: ").append(call.getClassName());
-            output.append("(").append(call.getArgumentCount()).append(" args)\n");
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "ConstructorCall")).append(": ");
+            output.append(colorize(ANSI_CYAN, call.getClassName()));
+            output.append(colorize(ANSI_WHITE, "("))
+                    .append(colorize(ANSI_GREEN, String.valueOf(call.getArgumentCount())))
+                    .append(colorize(ANSI_WHITE, " args)")).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             var args = call.getArguments();
             for (int i = 0; i < args.size(); i++) {
@@ -221,26 +277,43 @@ public class ASTTreePrinter {
                 visitExpression(args.get(i), newIndent, argIsLast);
             }
         } else if (expr instanceof MethodCall call) {
-            output.append("MethodCall: ").append(call.getMethodName());
-            output.append("(").append(call.getArgumentCount()).append(" args)\n");
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "MethodCall")).append(": ");
+            output.append(colorize(ANSI_CYAN, call.getMethodName()));
+            output.append(colorize(ANSI_WHITE, "("))
+                    .append(colorize(ANSI_GREEN, String.valueOf(call.getArgumentCount())))
+                    .append(colorize(ANSI_WHITE, " args)")).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
-            output.append(newIndent).append("├─ target:\n");
+            output.append(newIndent).append(colorize(ANSI_WHITE, "├─"))
+                    .append(" ").append(colorize(ANSI_YELLOW, "target")).append(":\n");
             visitExpression(call.getTarget(), newIndent + VERTICAL, true);
             if (call.getArgumentCount() > 0) {
-                output.append(newIndent).append("└─ arguments:\n");
+                output.append(newIndent).append(colorize(ANSI_WHITE, "└─"))
+                        .append(" ").append(colorize(ANSI_YELLOW, "arguments")).append(":\n");
                 var args = call.getArguments();
                 for (int i = 0; i < args.size(); i++) {
                     visitExpression(args.get(i), newIndent + SPACE, i == args.size() - 1);
                 }
             }
         } else if (expr instanceof MemberAccess access) {
-            output.append("MemberAccess: ").append(access.getMemberName()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "MemberAccess")).append(": ");
+            output.append(colorize(ANSI_CYAN, access.getMemberName())).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             visitExpression(access.getTarget(), newIndent, true);
         } else {
-            output.append(expr.getClass().getSimpleName()).append("\n");
+            output.append(colorize(ANSI_BOLD + ANSI_RED, expr.getClass().getSimpleName())).append("\n");
         }
+    }
 
+    // ========== COLOR HELPER ==========
+
+    /**
+     * Apply ANSI color codes to text if colors are enabled.
+     */
+    private String colorize(String colorCode, String text) {
+        if (!useColors) {
+            return text;
+        }
+        return colorCode + text + ANSI_RESET;
     }
 
     /**
@@ -251,5 +324,18 @@ public class ASTTreePrinter {
         ASTTreePrinter printer = new ASTTreePrinter();
         System.out.println(printer.print(program));
     }
-}
 
+    /**
+     * Prints AST to console without colors.
+     * @param program The program to print
+     */
+    public static void printToConsoleNoColors(Program program) {
+        ASTTreePrinter printer = new ASTTreePrinter(false);
+        System.out.println(printer.print(program));
+    }
+
+    private String centerText(String text, int width) {
+        int padding = (width - text.length()) / 2;
+        return " ".repeat(Math.max(0, padding)) + text;
+    }
+}
