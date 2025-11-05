@@ -377,16 +377,26 @@ public class Parser {
         }
         if (check(TokenType.IDENTIFIER)) {
             int saved = current;
-            Token id = advance();
+            Token id = advance(); // we need to do a step forward
             if (check(TokenType.ASSIGNMENT)) {
                 current = saved;
                 return parseAssignment();
             }
             current = saved;
+            return parseExpressionStatement();
         }
         error("Expected statement (var, return, if, while, or assignment)");
         advance();
-        return new ReturnStatement(null, previous().span());
+        return parseExpressionStatement();
+    }
+    /**
+     * Parses an expression as a statement.
+     * In O language, expressions like method calls can be statements.
+     * Examples: obj.method() or Integer(5)
+     */
+    private Statement parseExpressionStatement() {
+        Expression expr = parseExpression();
+        return new ExpressionStatement(expr, expr.getSpan());
     }
 
     /**

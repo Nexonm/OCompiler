@@ -190,7 +190,7 @@ public class ASTTreePrinter {
     }
 
     private void visitStatement(Statement stmt, String baseIndent, boolean isLast) {
-        output.append(baseIndent).append(colorize(ANSI_WHITE, isLast ? LAST_BRANCH : BRANCH));
+        output.append(baseIndent).append(isLast ? LAST_BRANCH : BRANCH);
 
         if (stmt instanceof ReturnStatement ret) {
             output.append(colorize(ANSI_BOLD + ANSI_BLUE, "ReturnStatement"));
@@ -235,10 +235,15 @@ public class ASTTreePrinter {
             output.append(colorize(ANSI_MAGENTA, varDecl.getName())).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             visitExpression(varDecl.getInitializer(), newIndent, true);
+        } else if (stmt instanceof ExpressionStatement exprStmt) {
+            output.append(colorize(ANSI_BOLD + ANSI_BLUE, "ExpressionStatement")).append("\n");
+            String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
+            visitExpression(exprStmt.getExpression(), newIndent, true);
         } else {
             output.append(colorize(ANSI_BOLD + ANSI_RED, stmt.getClass().getSimpleName())).append("\n");
         }
     }
+
 
     // ========== EXPRESSIONS ==========
 

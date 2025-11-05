@@ -72,6 +72,8 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
      */
     @Override
     public Void visitProgram(Program program) {
+        // Register built-in classes
+        registerBuiltinClasses();
         // First pass: Register all class names
         for (ClassDecl classDecl : program.getClasses()) {
             try {
@@ -90,6 +92,64 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
             visitClassDecl(classDecl);
         }
         return null;
+    }
+
+    /**
+     * Register built-in classes that are always available.
+     */
+    private void registerBuiltinClasses() {
+        // Register Integer
+        ClassSymbol integerClass = new ClassSymbol("Integer", null, null);
+        // Add built-in methods for Integer
+        integerClass.addMethod(new MethodSymbol(
+                "Plus", "Integer", List.of("Integer"), false, null
+        ));
+        integerClass.addMethod(new MethodSymbol(
+                "Minus", "Integer", List.of("Integer"), false, null
+        ));
+        integerClass.addMethod(new MethodSymbol(
+                "Mult", "Integer", List.of("Integer"), false, null
+        ));
+        integerClass.addMethod(new MethodSymbol(
+                "Div", "Integer", List.of("Integer"), false, null
+        ));
+        integerClass.addMethod(new MethodSymbol(
+                "Less", "Boolean", List.of("Integer"), false, null
+        ));
+        integerClass.addMethod(new MethodSymbol(
+                "Equal", "Boolean", List.of("Integer"), false, null
+        ));
+        symbolTable.define(integerClass);
+
+        // Register Boolean
+        ClassSymbol booleanClass = new ClassSymbol("Boolean", null, null);
+        booleanClass.addMethod(new MethodSymbol(
+                "And", "Boolean", List.of("Boolean"), false, null
+        ));
+        booleanClass.addMethod(new MethodSymbol(
+                "Or", "Boolean", List.of("Boolean"), false, null
+        ));
+        booleanClass.addMethod(new MethodSymbol(
+                "Not", "Boolean", List.of(), false, null
+        ));
+        symbolTable.define(booleanClass);
+
+        // Register String
+        ClassSymbol stringClass = new ClassSymbol("String", null, null);
+        stringClass.addMethod(new MethodSymbol(
+                "Concat", "String", List.of("String"), false, null
+        ));
+        symbolTable.define(stringClass);
+
+        // Register Real
+        ClassSymbol realClass = new ClassSymbol("Real", null, null);
+        realClass.addMethod(new MethodSymbol(
+                "Plus", "Real", List.of("Real"), false, null
+        ));
+        realClass.addMethod(new MethodSymbol(
+                "Minus", "Real", List.of("Real"), false, null
+        ));
+        symbolTable.define(realClass);
     }
 
     // ==================== Declarations ====================
@@ -287,6 +347,11 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
     // ==================== Expressions (not used for building) ====================
 
     @Override
+    public Void visitExpressionStatement(ExpressionStatement stmt) {
+        return null;
+    }
+
+    @Override
     public Void visitIdentifierExpr(IdentifierExpr expr) {
         return null;
     }
@@ -359,6 +424,8 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
             visitWhileLoop((WhileLoop) stmt);
         } else if (stmt instanceof ReturnStatement) {
             visitReturnStatement((ReturnStatement) stmt);
+        }else if (stmt instanceof ExpressionStatement){
+            visitExpressionStatement((ExpressionStatement) stmt);
         }
         // Add other statement types as needed
     }

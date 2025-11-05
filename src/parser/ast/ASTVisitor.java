@@ -40,5 +40,6 @@ public interface ASTVisitor<T> {
     T visitWhileLoop(WhileLoop loop);
     T visitReturnStatement(ReturnStatement returnStmt);
     T visitVariableDeclStatement(VariableDeclStatement stmt);
+    T visitExpressionStatement(ExpressionStatement stmt);
 }
 

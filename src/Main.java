@@ -5,6 +5,7 @@ import parser.ASTTreePrinter;
 import parser.Parser;
 import parser.ast.declarations.Program;
 import semantic.SymbolTablePrinter;
+import semantic.visitor.DeclarationChecker;
 import semantic.visitor.SymbolTableBuilder;
 
 import java.util.List;
@@ -21,17 +22,30 @@ public class Main {
     private static void test() {
         System.out.println("=== Simple test for lexer ===\n");
         String code = """
-              class Counter is
-                  var count : Integer(0)
-
-                  method increment(b: Integer) is
-                      count := count.Plus(b)
-                  end
-                  
-                  method increment() is
-                      count := count.Plus(Integer(1))
-                  end
-              end
+                class Calculator is
+                       var result : Integer(0)
+                
+                       this(initialValue : Integer) is
+                           result := initialValue
+                       end
+                
+                       method add(value : Integer) is
+                           result := result.Plus(value)
+                       end
+                
+                       method getResult() : Integer is
+                           result
+                       end
+                   end
+                
+                   class Main is
+                       var calc : Calculator(Integer(5))
+                
+                       method run() is
+                           calc.add(Integer(3))
+                           calc.add(Integer(2))
+                       end
+                   end
               """;
         // 1. Tokenize
         Lexer lexer = new Lexer(code);
@@ -64,5 +78,12 @@ public class Main {
         // Step 5: print table
         SymbolTablePrinter tablePrinter = new SymbolTablePrinter(true);
         tablePrinter.print(builder.getSymbolTable());
+
+        // Step 6: check declaration before usage
+        DeclarationChecker declChecker = new DeclarationChecker(builder.getSymbolTable());
+        boolean declCheckPassed = declChecker.check(ast);
+        System.out.println("Declaration check: " + (declCheckPassed? "passed!" : "❌!"));
+        declChecker.printErrors();
+
     }
 }

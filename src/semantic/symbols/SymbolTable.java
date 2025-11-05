@@ -35,7 +35,11 @@ public class SymbolTable {
             throw new IllegalStateException("Cannot pop from empty scope stack");
         }
         scopeStack.pop();
-        currentScope = scopeStack.peek();
+        if (!scopeStack.isEmpty()) {
+            currentScope = scopeStack.peek();
+        } else {
+            currentScope = null;
+        }
     }
 
     /**
