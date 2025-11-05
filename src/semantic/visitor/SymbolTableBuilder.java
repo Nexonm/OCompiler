@@ -31,6 +31,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
     /**
      * Perform symbol table construction on the program.
+     *
      * @return true if successful (no errors), false otherwise
      */
     public boolean build(Program program) {
@@ -64,9 +65,10 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
      * Basically, starts the program parsing. It is used to scan the whole program.
      * <p>
      * <lu>
-     *     <li>1. Scan all class declarations</li>
-     *     <li>2. Scan all inside classes</li>
+     * <li>1. Scan all class declarations</li>
+     * <li>2. Scan all inside classes</li>
      * </lu>
+     *
      * @param program the main {@link ASTNode} node of the program
      * @return nothing
      */
@@ -100,6 +102,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
     private void registerBuiltinClasses() {
         // Register Integer
         ClassSymbol integerClass = new ClassSymbol("Integer", null, null);
+        integerClass.addMethod(new MethodSymbol("this", null, List.of("Integer"), true, null));
         // Add built-in methods for Integer
         integerClass.addMethod(new MethodSymbol(
                 "Plus", "Integer", List.of("Integer"), false, null
@@ -123,6 +126,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
         // Register Boolean
         ClassSymbol booleanClass = new ClassSymbol("Boolean", null, null);
+        booleanClass.addMethod(new MethodSymbol("this", null, List.of(), true, null));
         booleanClass.addMethod(new MethodSymbol(
                 "And", "Boolean", List.of("Boolean"), false, null
         ));
@@ -136,6 +140,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
         // Register String
         ClassSymbol stringClass = new ClassSymbol("String", null, null);
+        stringClass.addMethod(new MethodSymbol("this", null, List.of("String"), true, null));
         stringClass.addMethod(new MethodSymbol(
                 "Concat", "String", List.of("String"), false, null
         ));
@@ -143,6 +148,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
         // Register Real
         ClassSymbol realClass = new ClassSymbol("Real", null, null);
+        realClass.addMethod(new MethodSymbol("this", null, List.of("Real"), true, null));
         realClass.addMethod(new MethodSymbol(
                 "Plus", "Real", List.of("Real"), false, null
         ));
@@ -424,7 +430,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
             visitWhileLoop((WhileLoop) stmt);
         } else if (stmt instanceof ReturnStatement) {
             visitReturnStatement((ReturnStatement) stmt);
-        }else if (stmt instanceof ExpressionStatement){
+        } else if (stmt instanceof ExpressionStatement) {
             visitExpressionStatement((ExpressionStatement) stmt);
         }
         // Add other statement types as needed

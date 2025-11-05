@@ -1,10 +1,8 @@
 package semantic.symbols;
 
 import lexer.Span;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
 
 /**
  * Represents a class symbol with its members.
@@ -36,8 +34,8 @@ public class ClassSymbol extends Symbol {
         return Optional.ofNullable(methods.get(signature));
     }
 
-    public java.util.List<MethodSymbol> getMethodsByName(String name) {
-        java.util.List<MethodSymbol> result = new java.util.ArrayList<>();
+    public List<MethodSymbol> getMethodsByName(String name) {
+        List<MethodSymbol> result = new ArrayList<>();
         for (MethodSymbol method : methods.values()) {
             if (method.getName().equals(name)) {
                 result.add(method);

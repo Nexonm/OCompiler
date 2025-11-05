@@ -7,6 +7,7 @@ import parser.ast.declarations.Program;
 import semantic.SymbolTablePrinter;
 import semantic.visitor.DeclarationChecker;
 import semantic.visitor.SymbolTableBuilder;
+import semantic.visitor.TypeConsistencyChecker;
 
 import java.util.List;
 
@@ -85,5 +86,10 @@ public class Main {
         System.out.println("Declaration check: " + (declCheckPassed? "passed!" : "❌!"));
         declChecker.printErrors();
 
+        // Step 7: check type consistency
+        TypeConsistencyChecker typeChecker = new TypeConsistencyChecker(builder.getSymbolTable());
+        boolean typeCheckPassed = typeChecker.check(ast);
+        System.out.println("Type Consistency check: " + (typeCheckPassed? "passed!" : "❌!"));
+            typeChecker.printErrors();
     }
 }
