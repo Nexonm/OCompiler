@@ -1,0 +1,11 @@
+// Forward Declaration
+class ForwardTest is
+    method compute(x : Integer) : Integer
+
+    method compute(x : Integer) : Integer is
+        return x
+    end
+
+    this() is
+    end
+end

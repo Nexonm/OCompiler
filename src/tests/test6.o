@@ -1,0 +1,15 @@
+// While loop
+class WhileTest is
+    method count(n : Integer) : Integer is
+        var i : Integer(0)
+
+        while i.Less(n) loop
+            i := i.Plus(Integer(1))
+        end
+
+        return i
+    end
+
+    this() is
+    end
+end

@@ -1,0 +1,13 @@
+// If-Statement
+class IfTest is
+    method check(x : Integer) : Boolean is
+        if x.Greater(Integer(5)) then
+            return Boolean(True)
+        else
+            return Boolean(False)
+        end
+    end
+
+    this() is
+    end
+end

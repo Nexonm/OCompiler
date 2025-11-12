@@ -1,0 +1,8 @@
+// Class with member variables
+class Counter is
+    var count : Integer(0)
+    var isActive : Boolean(true)
+
+    this() is
+    end
+end

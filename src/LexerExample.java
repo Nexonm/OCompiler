@@ -6,12 +6,17 @@ import parser.Parser;
 import parser.ast.ASTNode;
 import parser.ast.declarations.Program;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.List;
 
 /**
  * Enhanced example usage demonstrating span-based token positioning.
  */
 public class LexerExample {
+
+    private final static String FILE_NAME = "test6.o";
+    private final static String DIRECTORY = "./src/tests";
     public static void main(String[] args) {
         test();
 
@@ -19,29 +24,7 @@ public class LexerExample {
 
     private static void test() {
         System.out.println("=== Simple test for lexer ===\n");
-        String code = """
-                class Counter is
-                       var count : Integer(0)
-                
-                       method increment() is
-                           count := count.add(Integer(1))
-                       end
-                
-                       method getValue() : Integer is
-                           if count.graterThan(Integer(0)) then
-                               return count
-                           else
-                               return Integer(0)
-                           end
-                       end
-                
-                       method reset() is
-                           while count.graterThan(Integer(5)) loop
-                               count := count.minus(Integer(1))
-                           end
-                       end
-                   end
-                """;
+        String code = readFile();
         // 1. Tokenize
         Lexer lexer = new Lexer(code);
         List<Token> tokens = lexer.tokenize();
@@ -63,5 +46,18 @@ public class LexerExample {
         // Step 3: Check results
         ASTTreePrinter astPrinter = new ASTTreePrinter();
         System.out.println(astPrinter.print(ast));
+    }
+
+    private static String readFile() {
+        StringBuilder sb = new StringBuilder();
+        try(BufferedReader br = new BufferedReader(new FileReader(DIRECTORY + "/" + FILE_NAME))) {
+            for(String line; (line = br.readLine()) != null; ) {
+                sb.append(line).append("\n");
+            }
+        }catch (Exception e) {
+            System.out.println("Cannot open file: " + FILE_NAME);
+            e.printStackTrace();
+        }
+        return sb.toString();
     }
 }
