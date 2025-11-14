@@ -550,7 +550,7 @@ public class Parser {
             return new IdentifierExpr(name, token.span());
         }
         error("Expected expression");
-        return new IdentifierExpr("ERROR", peek().span());
+        return new UnknownExpression(peek().span());
     }
 
     /**
