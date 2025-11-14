@@ -293,8 +293,10 @@ public class ASTTreePrinter {
             output.append("VariableDecl: ").append(varDecl.getName()).append("\n");
             String newIndent = baseIndent + (isLast ? SPACE : VERTICAL);
             visitExpression(varDecl.getInitializer(), newIndent, true);
+        } else if (stmt instanceof UnknownStatement unknownStmt){
+            output.append(unknownStmt.toString()).append("\n");
         } else {
-            output.append(stmt.getClass().getSimpleName()).append("\n");
+            output.append("ERROR! " + stmt.getClass().getSimpleName()).append("\n");
         }
     }
 

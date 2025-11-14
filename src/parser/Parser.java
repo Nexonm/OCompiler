@@ -384,7 +384,7 @@ public class Parser {
         }
         error("Expected statement (var, return, if, while, or assignment), found (" + peek().lexeme() + ")");
         advance();
-        return new ReturnStatement(null, previous().span());
+        return new UnknownStatement(null, previous().span());
     }
 
     /**
