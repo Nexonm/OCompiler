@@ -249,7 +249,7 @@ public class Parser {
         List<Parameter> parameters = new ArrayList<>();
         if (match(TokenType.LPAREN)) {
             parameters = parseParameters();
-            consume(TokenType.RPAREN, "Expected ')' after parameters");
+            consume(TokenType.RPAREN, "Expected ',' between or ')' after parameters");
         }
         // Parse return type (optional)
         String returnTypeName = null;
@@ -291,7 +291,7 @@ public class Parser {
         List<Parameter> parameters = new ArrayList<>();
         if (match(TokenType.LPAREN)) {
             parameters = parseParameters();
-            consume(TokenType.RPAREN, "Expected ')' after parameters");
+            consume(TokenType.RPAREN, "Expected ',' between or ')' after parameters");
         }
 
         consume(TokenType.IS, "Expected 'is'");
@@ -382,7 +382,7 @@ public class Parser {
             }
             current = saved;
         }
-        error("Expected statement (var, return, if, while, or assignment)");
+        error("Expected statement (var, return, if, while, or assignment), found (" + peek().lexeme() + ")");
         advance();
         return new ReturnStatement(null, previous().span());
     }

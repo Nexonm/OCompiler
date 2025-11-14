@@ -5,6 +5,11 @@ import parser.ast.declarations.*;
 import parser.ast.expressions.*;
 import parser.ast.statements.*;
 
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 /**
  * Prints the AST in a beautiful tree structure.
  * Uses box-drawing characters for visual representation.
@@ -49,14 +54,101 @@ public class ASTTreePrinter {
 
     public String printErrors(Parser parser) {
         StringBuilder errorOutput = new StringBuilder();
-        for (String message : parser.getErrors()) {
+
+        // ANSI escape codes for red text
+        String RED = "\u001B[31m";
+        String RESET = "\u001B[0m";
+
+        List<String> errors = parser.getErrors();
+
+        // If there are more than 5 errors, likely a cascading error situation
+        if (errors.size() > 5) {
             errorOutput.append(RED)
-                    .append(message)
-                    .append(RESET)
-                    .append("\n");
+                    .append("=== CASCADING ERRORS DETECTED ===\n")
+                    .append(RESET);
+
+            // Find and display the first error (root cause)
+            if (!errors.isEmpty()) {
+                errorOutput.append(RED)
+                        .append("Primary error (likely root cause):\n")
+                        .append("  ")
+                        .append(errors.get(0))
+                        .append("\n\n")
+                        .append(RESET);
+            }
+
+            // Group subsequent errors by line number
+            Map<Integer, List<String>> errorsByLine = groupErrorsByLine(errors);
+
+            errorOutput.append(RED)
+                    .append("Affected lines: ");
+
+            Set<Integer> lines = errorsByLine.keySet();
+            errorOutput.append(lines.stream()
+                            .sorted()
+                            .map(String::valueOf)
+                            .collect(Collectors.joining(", ")))
+                    .append("\n")
+                    .append(RESET);
+
+            errorOutput.append(RED)
+                    .append("\nTotal errors: ")
+                    .append(errors.size())
+                    .append(" (")
+                    .append(errors.size() - 1)
+                    .append(" cascading errors suppressed)\n")
+                    .append(RESET);
+
+            errorOutput.append(RED)
+                    .append("\nSuggestion: Fix the first error and re-compile. ")
+                    .append("Subsequent errors may disappear.\n")
+                    .append(RESET);
+        } else {
+            // For 5 or fewer errors, display all normally
+            for (String message : errors) {
+                errorOutput.append(RED)
+                        .append(message)
+                        .append(RESET)
+                        .append("\n");
+            }
         }
+
         return errorOutput.toString();
     }
+
+    /**
+     * Helper method to group errors by line number.
+     * Extracts line numbers from error messages.
+     */
+    private Map<Integer, List<String>> groupErrorsByLine(List<String> errors) {
+        Map<Integer, List<String>> errorsByLine = new TreeMap<>();
+
+        for (String error : errors) {
+            // Extract line number from error message (e.g., "Parse error at line 8")
+            int lineNumber = extractLineNumber(error);
+
+            errorsByLine.computeIfAbsent(lineNumber, k -> new ArrayList<>()).add(error);
+        }
+
+        return errorsByLine;
+    }
+
+    /**
+     * Extracts line number from error message.
+     * Returns -1 if no line number found.
+     */
+    private int extractLineNumber(String errorMessage) {
+        // Pattern: "line X" where X is a number
+        Pattern pattern = Pattern.compile("line\\s+(\\d+)");
+        Matcher matcher = pattern.matcher(errorMessage);
+
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+
+        return -1;
+    }
+
 
     // ========== PROGRAM & CLASS ==========
 
