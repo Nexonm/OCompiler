@@ -185,7 +185,7 @@ public class Parser {
      * @return ClassDecl node
      */
     private ClassDecl parseClassDeclaration() {
-        Token classToken = consume(TokenType.CLASS, "Expected 'class'");
+        Token classToken = consume(TokenType.CLASS, "Expected 'class' keyword");
         Token nameToken = consume(TokenType.IDENTIFIER, "Expected class name");
         String className = nameToken.lexeme();
         // Optional: extends BaseClass
@@ -194,7 +194,7 @@ public class Parser {
             Token baseToken = consume(TokenType.IDENTIFIER, "Expected base class name");
             baseClassName = baseToken.lexeme();
         }
-        consume(TokenType.IS, "Expected 'is'");
+        consume(TokenType.IS, "Expected 'is' after class declaration");
         // Parse members
         List<MemberDecl> members = new ArrayList<>();
         while (!check(TokenType.END) && !isAtEnd()) {
@@ -206,13 +206,11 @@ public class Parser {
             } else if (check(TokenType.THIS)) {
                 members.add(parseConstructorDeclaration());
             } else {
-                error("Expected member declaration (var, method, or this)");
+                error("Expected member declaration (var, method, or this), got \"" + peek().lexeme() + "\" instead");
                 advance(); // Skip invalid token
             }
         }
-
-        Token endToken = consume(TokenType.END, "Expected 'end'");
-
+        Token endToken = consume(TokenType.END, "Expected 'end' to close the class " + className);
         Span span = classToken.span().merge(endToken.span());
         return new ClassDecl(className, baseClassName, members, span);
     }

@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "test6.o";
+    private final static String FILE_NAME = "test1.o";
     private final static String DIRECTORY = "./src/tests";
     public static void main(String[] args) {
         test();
@@ -23,7 +23,7 @@ public class LexerExample {
     }
 
     private static void test() {
-        System.out.println("=== Simple test for lexer ===\n");
+        System.out.println("======= Lexer Stage =======");
         String code = readFile();
         // 1. Tokenize
         Lexer lexer = new Lexer(code);
@@ -37,7 +37,7 @@ public class LexerExample {
             System.err.println("Cannot start Parsing stage because of errors!");
             return;
         }
-        System.out.println("=== Parsing stage ===");
+        System.out.println("======= Parsing stage =======");
 
         // Step 2: Parse (just pass tokens!)
         Parser parser = new Parser(tokens);
@@ -45,7 +45,14 @@ public class LexerExample {
 
         // Step 3: Check results
         ASTTreePrinter astPrinter = new ASTTreePrinter();
+        if (parser.hasErrors()){
+            System.out.println(astPrinter.printErrors(parser));
+        }
         System.out.println(astPrinter.print(ast));
+        if (parser.hasErrors()){
+            System.err.println("Cannot start Semantic stage because of errors!");
+            return;
+        }
     }
 
     private static String readFile() {

@@ -26,6 +26,10 @@ public class ASTTreePrinter {
     private static final String VERTICAL = "│  ";
     private static final String SPACE = "   ";
 
+    // ANSI escape codes for red text
+    private static final String RED = "\u001B[31m";
+    private static final String RESET = "\u001B[0m";
+
     public ASTTreePrinter() {
         this.output = new StringBuilder();
         this.indent = "";
@@ -41,6 +45,17 @@ public class ASTTreePrinter {
         indent = "";
         visitProgram(program);
         return output.toString();
+    }
+
+    public String printErrors(Parser parser) {
+        StringBuilder errorOutput = new StringBuilder();
+        for (String message : parser.getErrors()) {
+            errorOutput.append(RED)
+                    .append(message)
+                    .append(RESET)
+                    .append("\n");
+        }
+        return errorOutput.toString();
     }
 
     // ========== PROGRAM & CLASS ==========
