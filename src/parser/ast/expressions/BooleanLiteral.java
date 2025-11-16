@@ -5,7 +5,7 @@ import parser.ast.ASTVisitor;
 
 /**
  * Represents a boolean literal in the source code.
- *
+ * <p>
  * Example: true, false
  */
 public class BooleanLiteral extends Expression {
@@ -13,8 +13,9 @@ public class BooleanLiteral extends Expression {
 
     /**
      * Creates a boolean literal node.
+     *
      * @param value The boolean value (true or false)
-     * @param span Position in source code
+     * @param span  Position in source code
      */
     public BooleanLiteral(boolean value, Span span) {
         super(span);
@@ -30,7 +31,7 @@ public class BooleanLiteral extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

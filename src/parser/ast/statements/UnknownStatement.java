@@ -9,8 +9,9 @@ public class UnknownStatement extends Statement {
 
     /**
      * Creates a return statement node.
+     *
      * @param value The return value expression (null for void)
-     * @param span Position in source code
+     * @param span  Position in source code
      */
     public UnknownStatement(Expression value, Span span) {
         super(span);
@@ -19,7 +20,7 @@ public class UnknownStatement extends Statement {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

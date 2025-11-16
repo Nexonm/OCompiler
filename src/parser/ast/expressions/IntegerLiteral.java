@@ -16,8 +16,9 @@ public class IntegerLiteral extends Expression {
 
     /**
      * Creates an integer literal node.
+     *
      * @param value The integer value
-     * @param span Position in source code
+     * @param span  Position in source code
      */
     public IntegerLiteral(int value, Span span) {
         super(span);
@@ -33,7 +34,7 @@ public class IntegerLiteral extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

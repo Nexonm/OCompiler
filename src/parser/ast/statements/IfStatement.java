@@ -48,6 +48,7 @@ public class IfStatement extends Statement {
 
     /**
      * Check if we have full if-else statement or only if.
+     *
      * @return true if have, false otherwise
      */
     public boolean hasElseBranch() {
@@ -56,7 +57,7 @@ public class IfStatement extends Statement {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

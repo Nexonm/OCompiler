@@ -91,7 +91,7 @@ public class ConstructorDecl extends MemberDecl {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

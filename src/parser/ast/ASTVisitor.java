@@ -1,5 +1,9 @@
 package parser.ast;
 
+import parser.ast.declarations.*;
+import parser.ast.expressions.*;
+import parser.ast.statements.*;
+
 
 /**
  * Visitor interface for traversing the Abstract Syntax Tree.
@@ -11,10 +15,32 @@ package parser.ast;
  * @param <T> The return type of visit operations
  */
 public interface ASTVisitor<T> {
-    // Visit methods will be added as we implement more node types
-    // For example:
-    // T visitProgram(Program program);
-    // T visitClassDecl(ClassDecl classDecl);
-    // etc.
+    // Program
+    T visit(Program node);
+
+    // Declarations
+    T visit(ClassDecl node);
+    T visit(MethodDecl node);
+    T visit(ConstructorDecl node);
+    T visit(VariableDecl node);
+
+    // Expressions
+    T visit(IdentifierExpr node);
+    T visit(MethodCall node);
+    T visit(ConstructorCall node);
+    T visit(MemberAccess node);
+    T visit(ThisExpr node);
+    T visit(BooleanLiteral node);
+    T visit(IntegerLiteral node);
+    T visit(RealLiteral node);
+    T visit(UnknownExpression node);
+
+    // Statements
+    T visit(Assignment node);
+    T visit(IfStatement node);
+    T visit(WhileLoop node);
+    T visit(ReturnStatement node);
+    T visit(VariableDeclStatement node);
+    T visit(UnknownStatement node);
 }
 

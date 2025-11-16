@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Root node of the Abstract Syntax Tree.
  * Represents an entire O language program.
- *<p>
+ * <p>
  * Grammar: Program → { ClassDeclaration }
  */
 public class Program extends ASTNode {
@@ -19,6 +19,7 @@ public class Program extends ASTNode {
 
     /**
      * Creates a program node with a list of classes.
+     *
      * @param classes List of class declarations (can be empty)
      */
     public Program(List<ClassDecl> classes) {
@@ -35,6 +36,7 @@ public class Program extends ASTNode {
 
     /**
      * Checks if the program is empty (no classes).
+     *
      * @return true if no classes defined, false otherwise
      */
     public boolean isEmpty() {
@@ -43,6 +45,7 @@ public class Program extends ASTNode {
 
     /**
      * Gets the number of classes in this program.
+     *
      * @return Number of class declarations
      */
     public int getClassCount() {
@@ -51,7 +54,7 @@ public class Program extends ASTNode {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

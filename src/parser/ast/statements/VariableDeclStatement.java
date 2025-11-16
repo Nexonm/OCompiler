@@ -18,8 +18,7 @@ public class VariableDeclStatement extends Statement {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        // Will be implemented in semantic analysis phase
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

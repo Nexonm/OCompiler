@@ -28,9 +28,10 @@ public class VariableDecl extends MemberDecl {
 
     /**
      * Creates a variable declaration node.
-     * @param name The variable name
+     *
+     * @param name        The variable name
      * @param initializer The initialization expression
-     * @param span Position in source code
+     * @param span        Position in source code
      */
     public VariableDecl(String name, Expression initializer, Span span) {
         super(span);
@@ -47,6 +48,7 @@ public class VariableDecl extends MemberDecl {
 
     /**
      * Gets the initializer expression.
+     *
      * @return Expression used to initialize this variable
      */
     public Expression getInitializer() {
@@ -79,7 +81,7 @@ public class VariableDecl extends MemberDecl {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

@@ -86,7 +86,7 @@ public class ConstructorCall extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override
@@ -94,11 +94,11 @@ public class ConstructorCall extends Expression {
         StringBuilder builder = new StringBuilder(
                 String.format("ConstructorCall(%s, %d args)", className, arguments.size())
         );
-        if (arguments.isEmpty()){
+        if (arguments.isEmpty()) {
             return builder.toString();
-        }else{
+        } else {
             builder.append("\n");
-            for(ASTNode node: arguments){
+            for (ASTNode node : arguments) {
                 builder.append(node.toString()).append("\n");
             }
             return builder.toString();

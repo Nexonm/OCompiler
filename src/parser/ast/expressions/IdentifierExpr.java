@@ -1,4 +1,5 @@
 package parser.ast.expressions;
+
 import lexer.Span;
 import parser.ast.ASTVisitor;
 import parser.ast.declarations.VariableDecl;
@@ -8,8 +9,8 @@ import parser.ast.declarations.VariableDecl;
  * <p>
  * Examples:
  * <lu>
- *     <li>Variable reference: x, myVar, result</li>
- *     <li>Class name (before constructor call): Integer, MyClass</li>
+ * <li>Variable reference: x, myVar, result</li>
+ * <li>Class name (before constructor call): Integer, MyClass</li>
  * </lu>
  */
 public class IdentifierExpr extends Expression {
@@ -19,6 +20,7 @@ public class IdentifierExpr extends Expression {
 
     /**
      * Creates an identifier expression node.
+     *
      * @param name The identifier name
      * @param span Position in source code
      */
@@ -44,7 +46,7 @@ public class IdentifierExpr extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

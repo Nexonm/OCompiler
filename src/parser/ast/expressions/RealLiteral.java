@@ -13,8 +13,9 @@ public class RealLiteral extends Expression {
 
     /**
      * Creates a real literal node.
+     *
      * @param value The floating-point value
-     * @param span Position in source code
+     * @param span  Position in source code
      */
     public RealLiteral(double value, Span span) {
         super(span);
@@ -30,7 +31,7 @@ public class RealLiteral extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

@@ -13,9 +13,9 @@ import java.util.Optional;
  * <p>
  * Examples:
  * <lu>
- *     <li>return              (void return)</li>
- *     <li>return x            (return expression)</li>
- *     <li>return x.Plus(y)    (return complex expression)</li>
+ * <li>return              (void return)</li>
+ * <li>return x            (return expression)</li>
+ * <li>return x.Plus(y)    (return complex expression)</li>
  * </lu>
  */
 public class ReturnStatement extends Statement {
@@ -23,8 +23,9 @@ public class ReturnStatement extends Statement {
 
     /**
      * Creates a return statement node.
+     *
      * @param value The return value expression (null for void)
-     * @param span Position in source code
+     * @param span  Position in source code
      */
     public ReturnStatement(Expression value, Span span) {
         super(span);
@@ -40,6 +41,7 @@ public class ReturnStatement extends Statement {
 
     /**
      * Checks if this is a void return (no value).
+     *
      * @return true if no return value, false otherwise
      */
     public boolean isVoidReturn() {
@@ -55,7 +57,7 @@ public class ReturnStatement extends Statement {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 
     @Override

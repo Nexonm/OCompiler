@@ -10,6 +10,6 @@ public class UnknownExpression extends Expression {
 
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
-        return null;
+        return visitor.visit(this);
     }
 }
