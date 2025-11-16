@@ -3,6 +3,7 @@ package parser.ast.declarations;
 import lexer.Span;
 import parser.ast.ASTVisitor;
 import parser.ast.statements.Statement;
+import semantic.types.Type;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +32,10 @@ public class MethodDecl extends MemberDecl {
     private final String returnTypeName; // null if void
     private final List<Statement> body;  // null if forward declaration
     private final boolean isForward;
+
+    private Type returnType = null;
+    private String signature = null;
+    private String jasminSignature = null; // for codegen
 
     /**
      * Creates a method declaration node.
@@ -154,6 +159,56 @@ public class MethodDecl extends MemberDecl {
      */
     public int getBodyStatementCount() {
         return body != null ? body.size() : 0;
+    }
+
+    public Type getReturnType() {
+        return returnType;
+    }
+
+    public void setReturnType(Type returnType) {
+        this.returnType = returnType;
+    }
+
+    public String getJasminSignature() {
+        return jasminSignature;
+    }
+
+    public void setJasminSignature(String jasminSignature) {
+        this.jasminSignature = jasminSignature;
+    }
+
+    /**
+     * Compute method signature: "name(Type1,Type2,Type3)"
+     * Example: "add(Integer,Integer)" or "getValue()"
+     */
+    public String computeSignature() {
+        if (signature != null) return signature;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append("(");
+
+        for (int i = 0; i < parameters.size(); i++) {
+            Parameter param = parameters.get(i);
+            sb.append(param.getTypeName());
+            if (i < parameters.size() - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append(")");
+
+        signature = sb.toString();
+        return signature;
+    }
+
+    public String getSignature() {
+        if (signature == null) {
+            computeSignature();
+        }
+        return signature;
+    }
+
+    public void setSignature(String sig) {
+        this.signature = sig;
     }
 
     @Override

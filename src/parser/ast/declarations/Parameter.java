@@ -1,6 +1,7 @@
 package parser.ast.declarations;
 
 import lexer.Span;
+import semantic.types.Type;
 
 /**
  * Represents a method or constructor parameter.
@@ -13,6 +14,8 @@ public class Parameter {
     private final String name;
     private final String typeName;
     private final Span span;
+
+    private Type resolvedType = null;
 
     /**
      * Creates a parameter node.
@@ -45,6 +48,14 @@ public class Parameter {
      */
     public Span getSpan() {
         return span;
+    }
+
+    public Type getResolvedType() {
+        return resolvedType;
+    }
+
+    public void setResolvedType(Type resolvedType) {
+        this.resolvedType = resolvedType;
     }
 
     @Override

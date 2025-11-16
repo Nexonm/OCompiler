@@ -3,11 +3,9 @@ package parser.ast.declarations;
 import lexer.Span;
 import parser.ast.ASTNode;
 import parser.ast.ASTVisitor;
+import semantic.semantic.SemanticException;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Represents a class declaration in O language.
@@ -35,6 +33,11 @@ public class ClassDecl extends ASTNode {
     private final String name;
     private final String baseClassName; // null if no inheritance
     private final List<MemberDecl> members;
+
+    private ClassDecl parentClass = null;
+    private Map<String, MethodDecl> methodTable = null; // key = signature
+    private Map<String, VariableDecl> fieldTable = null;
+
 
     /**
      * Creates a class declaration node.
@@ -113,6 +116,81 @@ public class ClassDecl extends ASTNode {
      */
     public boolean isEmpty() {
         return members.isEmpty();
+    }
+
+    /**
+     * Find method by signature: "methodName(Type1,Type2)"
+     */
+    public MethodDecl findMethod(String signature) {
+        if (methodTable != null && methodTable.containsKey(signature)) {
+            return methodTable.get(signature);
+        }
+        // Search in parent class
+        if (parentClass != null) {
+            return parentClass.findMethod(signature);
+        }
+        return null;
+    }
+
+    /**
+     * Find all methods with given name (for overload resolution)
+     */
+    public List<MethodDecl> findMethodsByName(String name) {
+        List<MethodDecl> result = new ArrayList<>();
+        if (methodTable != null) {
+            for (Map.Entry<String, MethodDecl> entry : methodTable.entrySet()) {
+                if (entry.getValue().getName().equals(name)) {
+                    result.add(entry.getValue());
+                }
+            }
+        }
+        // Include parent class methods
+        if (parentClass != null) {
+            result.addAll(parentClass.findMethodsByName(name));
+        }
+        return result;
+    }
+
+    /**
+     * Add method to table using its signature as key
+     */
+    public void addMethod(MethodDecl method) {
+        if (methodTable == null) {
+            methodTable = new HashMap<>();
+        }
+        String sig = method.getSignature();
+        if (methodTable.containsKey(sig)) {
+            throw new SemanticException("Duplicate method: " + sig);
+        }
+        methodTable.put(sig, method);
+    }
+
+    /**
+     * Find field by name
+     */
+    public VariableDecl findField(String name) {
+        if (fieldTable != null && fieldTable.containsKey(name)) {
+            return fieldTable.get(name);
+        }
+        // Search in parent class
+        if (parentClass != null) {
+            return parentClass.findField(name);
+        }
+        return null;
+    }
+
+    /**
+     * Add field to table
+     */
+    public void addField(VariableDecl field) {
+        if (fieldTable == null) {
+            fieldTable = new HashMap<>();
+        }
+        String name = field.getName();
+        if (fieldTable.containsKey(name)) {
+            throw new SemanticException("Duplicate field: " + name);
+        }
+        fieldTable.put(name, field);
     }
 
     @Override

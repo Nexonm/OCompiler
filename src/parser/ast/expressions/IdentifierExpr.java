@@ -1,6 +1,7 @@
 package parser.ast.expressions;
 import lexer.Span;
 import parser.ast.ASTVisitor;
+import parser.ast.declarations.VariableDecl;
 
 /**
  * Represents an identifier (variable or class name) used in an expression.
@@ -13,6 +14,8 @@ import parser.ast.ASTVisitor;
  */
 public class IdentifierExpr extends Expression {
     private final String name;
+
+    private VariableDecl resolvedDecl = null;
 
     /**
      * Creates an identifier expression node.
@@ -29,6 +32,14 @@ public class IdentifierExpr extends Expression {
      */
     public String getName() {
         return name;
+    }
+
+    public VariableDecl getResolvedDecl() {
+        return resolvedDecl;
+    }
+
+    public void setResolvedDecl(VariableDecl resolvedDecl) {
+        this.resolvedDecl = resolvedDecl;
     }
 
     @Override

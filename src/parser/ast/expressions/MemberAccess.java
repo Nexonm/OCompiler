@@ -2,6 +2,7 @@ package parser.ast.expressions;
 
 import lexer.Span;
 import parser.ast.ASTVisitor;
+import parser.ast.declarations.VariableDecl;
 
 /**
  * Represents member access on an object.
@@ -10,6 +11,8 @@ import parser.ast.ASTVisitor;
 public class MemberAccess extends Expression {
     private final Expression target;
     private final String memberName;
+
+    private VariableDecl resolvedVar = null;
 
     public MemberAccess(Expression target, String memberName, Span span) {
         super(span);
@@ -29,6 +32,14 @@ public class MemberAccess extends Expression {
      */
     public String getMemberName() {
         return memberName;
+    }
+
+    public VariableDecl getResolvedVar() {
+        return resolvedVar;
+    }
+
+    public void setResolvedVar(VariableDecl resolvedVar) {
+        this.resolvedVar = resolvedVar;
     }
 
     @Override

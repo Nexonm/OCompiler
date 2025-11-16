@@ -2,6 +2,7 @@ package parser.ast.expressions;
 
 import lexer.Span;
 import parser.ast.ASTNode;
+import semantic.types.Type;
 
 /**
  * Base class for all expression nodes in the AST.
@@ -15,12 +16,22 @@ import parser.ast.ASTNode;
  */
 public abstract class Expression extends ASTNode {
 
+    private Type inferredType = null;
+
     /**
      * Creates an expression node.
      * @param span Position in source code
      */
     public Expression(Span span) {
         super(span);
+    }
+
+    public Type getInferredType() {
+        return inferredType;
+    }
+
+    public void setInferredType(Type inferredType) {
+        this.inferredType = inferredType;
     }
 }
 

@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "test1.o";
+    private final static String FILE_NAME = "test3.o";
     private final static String DIRECTORY = "./src/tests";
     public static void main(String[] args) {
         test();

@@ -3,6 +3,7 @@ package parser.ast.expressions;
 import lexer.Span;
 import parser.ast.ASTNode;
 import parser.ast.ASTVisitor;
+import parser.ast.declarations.ClassDecl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +24,8 @@ import java.util.List;
 public class ConstructorCall extends Expression {
     private final String className;
     private final List<Expression> arguments;
+
+    private ClassDecl resolvedClass = null;
 
     /**
      * Creates a constructor call node.
@@ -71,6 +74,14 @@ public class ConstructorCall extends Expression {
      */
     public boolean hasNoArguments() {
         return arguments.isEmpty();
+    }
+
+    public ClassDecl getResolvedClass() {
+        return resolvedClass;
+    }
+
+    public void setResolvedClass(ClassDecl resolvedClass) {
+        this.resolvedClass = resolvedClass;
     }
 
     @Override

@@ -2,6 +2,8 @@ package parser.ast.expressions;
 
 import lexer.Span;
 import parser.ast.ASTVisitor;
+import parser.ast.declarations.MethodDecl;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +16,8 @@ public class MethodCall extends Expression {
     private final Expression target;
     private final String methodName;
     private final List<Expression> arguments;
+
+    private MethodDecl resolvedMethod = null;
 
     public MethodCall(Expression target, String methodName,
                       List<Expression> arguments, Span span) {
@@ -49,6 +53,14 @@ public class MethodCall extends Expression {
      */
     public int getArgumentCount() {
         return arguments.size();
+    }
+
+    public MethodDecl getResolvedMethod() {
+        return resolvedMethod;
+    }
+
+    public void setResolvedMethod(MethodDecl resolvedMethod) {
+        this.resolvedMethod = resolvedMethod;
     }
 
     @Override
