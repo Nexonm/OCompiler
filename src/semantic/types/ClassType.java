@@ -43,12 +43,12 @@ public class ClassType extends Type {
 
         // Check inheritance (subclass can be assigned to parent)
         ClassDecl current = this.declaration;
-//        while (current != null && current.hasParent()) {
-//            if (current.getParentClass() == otherClass.declaration) {
-//                return true;
-//            }
-//            current = current.getParentClass();
-//        }
+        while (current != null && current.hasBaseClass()) {
+            if (current.getParentClass().getName().equals(otherClass.declaration.getName())) {
+                return true;
+            }
+            current = current.getParentClass();
+        }
 
         return false;
     }

@@ -193,6 +193,14 @@ public class ClassDecl extends ASTNode {
         fieldTable.put(name, field);
     }
 
+    public ClassDecl getParentClass() {
+        return parentClass;
+    }
+
+    public void setParentClass(ClassDecl parentClass) {
+        this.parentClass = parentClass;
+    }
+
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
         // Will be implemented in semantic analysis phase
