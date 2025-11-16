@@ -5,6 +5,7 @@ import parser.ASTTreePrinter;
 import parser.Parser;
 import parser.ast.ASTNode;
 import parser.ast.declarations.Program;
+import semantic.visitors.SymbolTableBuilder;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -15,7 +16,7 @@ import java.util.List;
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "test3.o";
+    private final static String FILE_NAME = "testTemp.o";
     private final static String DIRECTORY = "./src/tests";
     public static void main(String[] args) {
         test();
@@ -53,6 +54,13 @@ public class LexerExample {
             System.err.println("Cannot start Semantic stage because of errors!");
             return;
         }
+
+        System.out.println("======= Semantic stage =======");
+        // Step 4: Semantic Analysis
+        // Step 4.1: Build basic Symbol Table
+        SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilder();
+        symbolTableBuilder.analyze(ast);
+
     }
 
     private static String readFile() {

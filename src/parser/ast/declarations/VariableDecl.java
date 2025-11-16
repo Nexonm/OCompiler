@@ -75,7 +75,7 @@ public class VariableDecl extends MemberDecl {
         return isParameter;
     }
 
-    public void setParameter(boolean parameter) {
+    public void setIsParameter(boolean parameter) {
         isParameter = parameter;
     }
 

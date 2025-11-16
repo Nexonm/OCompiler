@@ -1,0 +1,7 @@
+class DuplicateCtors is
+    this(x : Integer) is
+    end
+
+    this(x : Integer) is
+    end
+end
