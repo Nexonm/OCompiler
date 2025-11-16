@@ -3,7 +3,9 @@ package parser.ast.declarations;
 import lexer.Span;
 import parser.ast.ASTNode;
 import parser.ast.ASTVisitor;
+import semantic.scope.Scope;
 import semantic.semantic.SemanticException;
+import semantic.types.ClassType;
 
 import java.util.*;
 
@@ -29,15 +31,15 @@ import java.util.*;
  * // members...
  * end}
  */
-public class ClassDecl extends ASTNode {
+public class ClassDecl extends ASTNode implements Scope {
     private final String name;
     private final String baseClassName; // null if no inheritance
     private final List<MemberDecl> members;
 
     private ClassDecl parentClass = null;
+    private ClassType classType = null;
     private Map<String, MethodDecl> methodTable = null; // key = signature
     private Map<String, VariableDecl> fieldTable = null;
-
 
     /**
      * Creates a class declaration node.
@@ -201,6 +203,14 @@ public class ClassDecl extends ASTNode {
         this.parentClass = parentClass;
     }
 
+    public ClassType getClassType() {
+        return classType;
+    }
+
+    public void setClassType(ClassType type) {
+        this.classType = type;
+    }
+
     @Override
     public <T> T accept(ASTVisitor<T> visitor) {
         // Will be implemented in semantic analysis phase
@@ -222,6 +232,31 @@ public class ClassDecl extends ASTNode {
             }
             return builder.toString();
         }
+    }
+
+    // Scope interface implementation:
+    @Override
+    public Scope getEnclosingScope() {
+        return parentClass;  // Parent class is enclosing scope
+    }
+
+    @Override
+    public void define(String name, Object symbol) throws SemanticException {
+        if (symbol instanceof MethodDecl) {
+            addMethod((MethodDecl) symbol);
+        } else if (symbol instanceof VariableDecl) {
+            addField((VariableDecl) symbol);
+        }
+    }
+
+    @Override
+    public Object resolve(String name) {
+        // Try fields first
+        if (fieldTable != null && fieldTable.containsKey(name)) {
+            return fieldTable.get(name);
+        }
+        // Methods are resolved by signature, not name
+        return null;
     }
 }
 
