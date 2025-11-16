@@ -541,12 +541,27 @@ public class Parser {
         if (check(TokenType.IDENTIFIER)) {
             Token token = advance();
             String name = token.lexeme();
-            if (match(TokenType.LPAREN)) {
-                List<Expression> args = parseArguments();
-                Token rparen = consume(TokenType.RPAREN, "Expected ')'");
-                Span span = token.span().merge(rparen.span());
-                return new ConstructorCall(name, args, span);
+            if (check(TokenType.LPAREN)) {
+                // add(...) - method, Add(...) - constructor. Methods start with lowercase
+                if (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
+                    advance(); // consume '('
+                    List<Expression> args = parseArguments();
+                    Token rparen = consume(TokenType.RPAREN, "Expected ')'");
+                    Span span = token.span().merge(rparen.span());
+                    return new ConstructorCall(name, args, span);
+                } else {
+                    // Sugar for better error handling
+                    // This should not happen in primary context (methods need a receiver)
+                    error("Method call '" + name + "' requires a receiver (use 'this." + name + "(...)')");
+                    advance(); // consume '('
+                    List<Expression> args = parseArguments();
+                    Token rparen = consume(TokenType.RPAREN, "Expected ')'");
+                    Span span = token.span().merge(rparen.span());
+                    // Return as identifier expression for error recovery
+                    return new IdentifierExpr(name, span);
+                }
             }
+
             return new IdentifierExpr(name, token.span());
         }
         error("Expected expression");
