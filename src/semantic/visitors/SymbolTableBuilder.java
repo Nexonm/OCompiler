@@ -67,6 +67,10 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
         return errors;
     }
 
+    public GlobalScope getGlobalScope() {
+        return globalScope;
+    }
+
     /**
      * Pass 1: Register all class declarations in global scope.
      */
@@ -82,8 +86,6 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
                 // Create ClassType
                 ClassType classType = new ClassType(classDecl.getName(), classDecl);
                 classDecl.setClassType(classType);
-
-                // Add to global scope
                 globalScope.define(classDecl.getName(), classDecl);
             } catch (SemanticException e) {
                 errors.add(formatError("Duplicate class: " + classDecl.getName(),
@@ -248,13 +250,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
         // Add parameters to scope
         for (Parameter param : node.getParameters()) {
             String paramTypeName = param.getTypeName();
-            Object typeObj = globalScope.resolve(paramTypeName);
-            if (typeObj == null) {
-                errors.add(formatError(
-                        "Unknown parameter type: " + paramTypeName + " for parameter '" + param.getName() + "'",
-                        param.getSpan()
-                ));
-            }
+            Type paramType = resolveParameterType(paramTypeName, param.getSpan());
 
             try {
                 // Create VariableDecl for parameter (for uniform handling)
@@ -264,6 +260,9 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
                         param.getSpan()
                 );
                 paramDecl.setIsParameter(true);
+                if (paramType != null) {
+                    paramDecl.setDeclaredType(paramType);
+                }
 
                 methodScope.define(param.getName(), paramDecl);
             } catch (SemanticException e) {
@@ -281,6 +280,26 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
         currentScope = currentScope.getEnclosingScope();
         currentMethod = null;
+        return null;
+    }
+
+    /**
+     * Resolve parameter type name to Type object.
+     */
+    private Type resolveParameterType(String typeName, Span span) {
+        // Check built-in types
+        Type builtIn = BuiltInTypes.getBuiltInType(typeName);
+        if (builtIn != null) {
+            return builtIn;
+        }
+
+        // Check user-defined classes
+        Object obj = globalScope.resolve(typeName);
+        if (obj instanceof ClassDecl) {
+            return ((ClassDecl) obj).getClassType();
+        }
+
+        errors.add(formatError("Unknown parameter type: " + typeName, span));
         return null;
     }
 

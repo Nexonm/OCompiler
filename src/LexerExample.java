@@ -6,6 +6,7 @@ import parser.Parser;
 import parser.ast.ASTNode;
 import parser.ast.declarations.Program;
 import semantic.visitors.SymbolTableBuilder;
+import semantic.visitors.TypeChecker;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -60,6 +61,13 @@ public class LexerExample {
         // Step 4.1: Build basic Symbol Table
         SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilder();
         symbolTableBuilder.analyze(ast);
+        System.out.println("=== Symbol Table build!");
+
+        TypeChecker typeChecker = new TypeChecker(symbolTableBuilder.getGlobalScope());
+        typeChecker.check(ast);
+        System.out.println("=== Type check: Passed");
+
+        System.out.println("FINISH!");
 
     }
 

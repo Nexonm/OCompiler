@@ -77,10 +77,10 @@ VariableDeclaration : var Identifier : Expression
 
 **Semantics**:
 
-- Variables are **read-only** from outside the class ~!~ (Да, согласно описанию)
+- Variables are **read-only** from outside the class
 - Type is inferred from the initialization expression
-- Must be initialized at declaration ~!~ (Да, согласно описанию)
-- Access to member variables is allowed only from class methods (or from methods of derived classes)  ~!~ (Да, согласно описанию)
+- Must be initialized at declaration
+- Access to member variables is allowed only from class methods (or from methods of derived classes)
 
 **Example**:
 
@@ -107,7 +107,7 @@ ParameterDeclaration : Identifier : ClassName
 
 **Features**:
 
-- **Forward Declarations**: Method header without body ~!~ (Да, согласно описанию)
+- **Forward Declarations**: Method header without body
 - **Method Overloading**: Multiple methods with same name but different parameter signatures
 - **Short Form**: Use `=> Expression` for single-expression methods
 - **Return Type**: Optional return type specification
@@ -278,14 +278,14 @@ Class
 
 ### 4.3 Access Control
 
-- **Class Members**: Read-only from outside the class ~!~ (Да, согласно описанию)
+- **Class Members**: Read-only from outside the class
 - **Method Access**: Class methods can modify member variables
 - **Inheritance Access**: Derived classes can access base class members
 
 
 ## 5. Standard Library Classes
 
-~!~ откуда нахер взялись AnyValue and AnyRef? (They are automatically initialized when their concrete subclasses are created)
+Откуда взялись AnyValue and AnyRef? (They are automatically initialized when their concrete subclasses are created)
 
 ### 5.1 Integer Class
 

@@ -1,7 +1,13 @@
-class DuplicateCtors is
-    this(x : Integer) is
+// Class with Methods and Local Variables
+class Calculator is
+    var result : Integer(0)
+
+    method add(a : Integer, b : Integer) : Integer is
+        var sum : Integer(0)
+        sum := a.Plus(b).Plus(b)
+        return sum
     end
 
-    this(x : Integer) is
+    this() is
     end
 end

@@ -47,4 +47,84 @@ Simple compiler project for Compiler Construction course at Innopolis University
 - **Important Checks**: 8 (type validation, duplicate members)
 - **Name Resolution**: 4 (variable/identifier lookups)
 
+## TypeChecker Validation Checks
+
+### Type Inference
+
+- ✓ **Expression Type Inference** - Determines type for every expression in the program
+- ✓ **Identifier Type Lookup** - Resolves identifier to its declared type from variable declaration
+- ✓ **Literal Type Inference** - Assigns built-in types to literals (Integer, Boolean, Real)
+- ✓ **Constructor Call Type** - Infers object type from constructor call
+- ✓ **Method Call Return Type** - Infers type from method's declared return type
+- ✓ **This Expression Type** - Resolves 'this' to current class type
+
+### Type Compatibility Validation
+
+- ✓ **Assignment Type Matching** - Ensures value type is compatible with target variable type
+- ✓ **Built-in Type Incompatibility** - Rejects assignments between Integer, Boolean, and Real
+- ✓ **Inheritance-based Compatibility** - Allows subclass-to-parent type assignments
+- ✓ **Constructor Argument Types** - Validates constructor call arguments match expected types
+
+### Method Call Validation
+
+- ✓ **Method Existence Check** - Verifies method exists in target class or built-in type
+- ✓ **Method Signature Resolution** - Matches method call to correct overloaded method
+- ✓ **Argument Count Validation** - Ensures correct number of arguments
+- ✓ **Argument Type Compatibility** - Checks each argument type matches parameter type
+- ✓ **Built-in Method Lookup** - Validates calls to standard library methods (Plus, Greater, etc.)
+- ✓ **Method Call on Built-in Types** - Ensures valid method calls on Integer, Boolean, Real
+
+### Constructor Validation
+
+- ✓ **Built-in Constructor Arguments** - Validates Integer(Integer), Boolean(Boolean), Real(Real)
+- ✓ **Constructor Type Mismatch** - Rejects Integer(Boolean) or other incompatible constructor calls
+- ✓ **User Constructor Resolution** - Finds matching constructor in user-defined classes
+- ✓ **Constructor Parameter Count** - Ensures correct number of constructor arguments
+
+### Return Statement Validation
+
+- ✓ **Return Type Matching** - Ensures return value type matches method's declared return type
+- ✓ **Void Method Returns** - Validates void methods don't return values
+- ✓ **Missing Return Value** - Checks non-void methods return a value
+- ✓ **Return Type Compatibility** - Allows subclass return where parent expected
+
+### Control Flow Type Checking
+
+- ✓ **If Condition Type** - Ensures if statement condition is Boolean type
+- ✓ **While Condition Type** - Ensures while loop condition is Boolean type
+- ✓ **Boolean Expression Validation** - Rejects non-Boolean types in conditional contexts
+
+### Member Access Validation
+
+- ✓ **Field Existence Check** - Verifies field exists in target class
+- ✓ **Field Type Resolution** - Determines type of accessed field
+- ✓ **Member Access on Built-ins** - Prevents field access on Integer, Boolean, Real
+
+### Parameter and Variable Type Resolution
+
+- ✓ **Parameter Type Resolution** - Resolves parameter type names to Type objects
+- ✓ **Parameter Type Assignment** - Sets declaredType on parameter VariableDecl objects
+- ✓ **Variable Initialization Type** - Infers variable type from initializer expression
+- ✓ **Method Return Type Resolution** - Converts return type name to Type object
+
+### Context Validation
+
+- ✓ **'this' Context Check** - Ensures 'this' is only used inside methods/constructors
+- ✓ **Current Class Tracking** - Maintains context of which class is being type-checked
+- ✓ **Current Method Tracking** - Tracks which method body is being validated
+
+### Error Reporting
+
+- ✓ **Type Mismatch Errors** - Reports detailed type incompatibility messages
+- ✓ **Unknown Type Errors** - Reports when type name cannot be resolved
+- ✓ **Method Not Found Errors** - Detailed error for missing methods
+- ✓ **Source Location Tracking** - All errors include line and column information
+
+## Summary Statistics
+
+- **Total Type Checks**: 30+ validation rules
+- **Expression Type Inference**: 9 expression types handled
+- **Statement Validation**: 5 statement types checked
+- **Built-in Type Support**: 3 types (Integer, Boolean, Real)
+- **Standard Library Methods**: 15+ built-in methods validated
 
