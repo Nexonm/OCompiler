@@ -5,6 +5,8 @@ import parser.ASTTreePrinter;
 import parser.Parser;
 import parser.ast.ASTNode;
 import parser.ast.declarations.Program;
+import semantic.visitors.ConstantFolder;
+import semantic.visitors.DeadCodeReturnEliminator;
 import semantic.visitors.SymbolTableBuilder;
 import semantic.visitors.TypeChecker;
 
@@ -63,9 +65,28 @@ public class LexerExample {
         symbolTableBuilder.analyze(ast);
         System.out.println("=== Symbol Table build!");
 
+        // Step 4.2: Type checks
         TypeChecker typeChecker = new TypeChecker(symbolTableBuilder.getGlobalScope());
         typeChecker.check(ast);
         System.out.println("=== Type check: Passed");
+
+        // Step 4.3: Dead code elimination (after return only)
+        DeadCodeReturnEliminator deadCodeElim = new DeadCodeReturnEliminator();
+        deadCodeElim.optimize(ast);
+        System.out.println("=== Return dead code optimization: Passed");
+        System.out.println("Statements removed: " + deadCodeElim.getStatementsRemoved());
+        System.out.println(astPrinter.print(ast));
+
+        // Step 4.4: Constant Folding
+        ConstantFolder folder = new ConstantFolder();
+        folder.optimize(ast);
+        System.out.println("=== Constant Folder: Passed");
+        System.out.println(astPrinter.print(ast));
+
+//        ConstantFolder folder2 = new ConstantFolder();
+//        folder2.optimize(ast);
+//        System.out.println("=== Constant Folder2: Passed");
+//        System.out.println(astPrinter.print(ast));
 
         System.out.println("FINISH!");
 

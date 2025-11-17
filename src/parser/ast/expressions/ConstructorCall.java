@@ -55,7 +55,7 @@ public class ConstructorCall extends Expression {
      * @return Unmodifiable list of argument expressions
      */
     public List<Expression> getArguments() {
-        return Collections.unmodifiableList(arguments);
+        return arguments;
     }
 
     /**

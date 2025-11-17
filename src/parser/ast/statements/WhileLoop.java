@@ -13,7 +13,7 @@ import java.util.List;
  * Grammar: WhileLoop → while Expression loop Body end
  */
 public class WhileLoop extends Statement {
-    private final Expression condition;
+    private Expression condition; // used for syntax, optimized at semantic stage
     private final List<Statement> body;
 
     public WhileLoop(Expression condition, List<Statement> body, Span span) {
@@ -34,6 +34,23 @@ public class WhileLoop extends Statement {
      */
     public List<Statement> getBody() {
         return Collections.unmodifiableList(body);
+    }
+
+    public void setCondition(Expression condition) {
+        this.condition = condition;
+    }
+
+    /**
+     * Used to update the body in case of optimizations
+     *
+     * @param list new body
+     */
+    public void setBody(List<Statement> list) {
+        if (body == null) {
+            return;
+        }
+        body.clear();
+        body.addAll(list);
     }
 
     /**

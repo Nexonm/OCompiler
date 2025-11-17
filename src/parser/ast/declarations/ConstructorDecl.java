@@ -8,6 +8,7 @@ import parser.ast.statements.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents a constructor declaration.
@@ -71,6 +72,19 @@ public class ConstructorDecl extends MemberDecl {
      */
     public List<Statement> getBody() {
         return Collections.unmodifiableList(body);
+    }
+
+    /**
+     * Used to update the body in case of optimizations
+     *
+     * @param list new body
+     */
+    public void setBody(List<Statement> list) {
+        if (body == null) {
+            return;
+        }
+        body.clear();
+        body.addAll(list);
     }
 
     /**

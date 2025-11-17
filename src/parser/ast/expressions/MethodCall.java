@@ -13,7 +13,7 @@ import java.util.List;
  * Grammar: MethodCall → Expression . Identifier ( Arguments )
  */
 public class MethodCall extends Expression {
-    private final Expression target;
+    private Expression target; // used for syntax, optimized at semantic stage
     private final String methodName;
     private final List<Expression> arguments;
 
@@ -32,6 +32,10 @@ public class MethodCall extends Expression {
      */
     public Expression getTarget() {
         return target;
+    }
+
+    public void setTarget(Expression target) {
+        this.target = target;
     }
 
     /**

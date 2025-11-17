@@ -1,11 +1,14 @@
-// Class with Methods and Local Variables
-class Calculator is
-    var result : Integer(0)
+class DeepNesting is
+    method test() : Integer is
+        var step1 : Integer(Integer(5).Plus(Integer(3)))
+        var step2 : Integer(step1.Mult(Integer(2)))
+        var step3 : Boolean(step2.Greater(Integer(10)))
 
-    method add(a : Integer, b : Integer) : Integer is
-        var sum : Integer(0)
-        sum := a.Plus(b).Plus(b)
-        return sum
+        if step3 then
+            return Integer(100).Minus(Integer(50))
+        else
+            return Integer(0)
+        end
     end
 
     this() is

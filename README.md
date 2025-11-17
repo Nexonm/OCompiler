@@ -120,11 +120,51 @@ Simple compiler project for Compiler Construction course at Innopolis University
 - ✓ **Method Not Found Errors** - Detailed error for missing methods
 - ✓ **Source Location Tracking** - All errors include line and column information
 
-## Summary Statistics
+## Constant Folder Optimizations
 
-- **Total Type Checks**: 30+ validation rules
-- **Expression Type Inference**: 9 expression types handled
-- **Statement Validation**: 5 statement types checked
-- **Built-in Type Support**: 3 types (Integer, Boolean, Real)
-- **Standard Library Methods**: 15+ built-in methods validated
+### What It Does
+- ✓ **Evaluates constant expressions at compile time** - Computes values before runtime
+- ✓ **Folds Integer arithmetic** - Plus, Minus, Mult, Div, Rem operations
+- ✓ **Folds Boolean logic** - And, Or, Xor, Not operations
+- ✓ **Folds Real arithmetic** - Plus, Minus, Mult, Div operations
+- ✓ **Folds comparison operations** - Less, Greater, Equal, LessEqual, GreaterEqual
+- ✓ **Handles unary operations** - UnaryMinus, UnaryPlus
+- ✓ **Unwraps nested constructors** - Simplifies Boolean(Boolean(false)) to Boolean(false)
+- ✓ **Recursively folds nested expressions** - Bottom-up evaluation of complex expressions
+
+### Optimization Examples
+
+#### Integer Arithmetic
+- **Before**: `Integer(5).Plus(Integer(3))`
+- **After**: `Integer(8)`
+
+#### Boolean Logic
+- **Before**: `Boolean(true).And(Boolean(false))`
+- **After**: `Boolean(false)`
+
+#### Comparisons
+- **Before**: `Integer(10).Greater(Integer(5))`
+- **After**: `Boolean(true)`
+
+#### Nested Expressions
+- **Before**: `Integer(2).Plus(Integer(3)).Mult(Integer(4))`
+- **After**: `Integer(20)` (requires multiple passes)
+
+### Implementation Details
+- **Type**: AST-modifying optimization
+- **Algorithm**: Bottom-up recursive traversal with expression replacement
+- **Complexity**: O(n) per pass, where n = number of expressions
+- **Multiple passes**: Required for nested expressions (iterative until fixed point)
+- **Safe**: Yes - mathematically sound transformations only
+
+### Operations Supported
+- **Integer**: 11 operations (5 arithmetic + 5 comparisons + 2 unary)
+- **Boolean**: 4 operations (3 binary + 1 unary)
+- **Real**: 10 operations (5 arithmetic + 5 comparisons + 2 unary)
+
+### Statistics Tracked
+- ✓ **Expressions folded count** - Reports number of optimized expressions
+- ✓ **Change detection** - Returns boolean indicating if AST was modified
+- ✓ **Optimization report** - Console output showing results per pass
+
 

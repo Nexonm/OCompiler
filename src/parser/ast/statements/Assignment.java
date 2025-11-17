@@ -11,7 +11,7 @@ import parser.ast.expressions.Expression;
  */
 public class Assignment extends Statement {
     private final String targetName;
-    private final Expression value;
+    private Expression value; // used for syntax, optimized at semantic stage
 
     private VariableDecl resolvedTarget = null;
 
@@ -34,6 +34,8 @@ public class Assignment extends Statement {
     public Expression getValue() {
         return value;
     }
+
+    public void setValue(Expression value) {}
 
     public VariableDecl getResolvedTarget() {
         return resolvedTarget;

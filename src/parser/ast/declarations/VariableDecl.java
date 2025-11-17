@@ -20,7 +20,7 @@ import semantic.types.Type;
  */
 public class VariableDecl extends MemberDecl {
     private final String name;
-    private final Expression initializer;
+    private Expression initializer; // used for syntax, optimized at semantic stage
 
     private Type declaredType = null;
     private boolean isParameter = false;
@@ -53,6 +53,10 @@ public class VariableDecl extends MemberDecl {
      */
     public Expression getInitializer() {
         return initializer;
+    }
+
+    public void setInitializer(Expression initializer) {
+        this.initializer = initializer;
     }
 
     public Type getDeclaredType() {

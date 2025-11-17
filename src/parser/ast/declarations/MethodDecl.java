@@ -138,6 +138,19 @@ public class MethodDecl extends MemberDecl {
     }
 
     /**
+     * Used to update the body in case of optimizations
+     *
+     * @param list new body
+     */
+    public void setBody(List<Statement> list) {
+        if (body == null) {
+            return;
+        }
+        body.clear();
+        body.addAll(list);
+    }
+
+    /**
      * Checks if this is a forward declaration (no body).
      * @return true if forward, false if has body
      */

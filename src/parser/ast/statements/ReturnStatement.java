@@ -19,7 +19,7 @@ import java.util.Optional;
  * </lu>
  */
 public class ReturnStatement extends Statement {
-    private final Expression value; // null for void return
+    private Expression value; // null for void return // used for syntax, optimized at semantic stage
 
     /**
      * Creates a return statement node.
@@ -37,6 +37,10 @@ public class ReturnStatement extends Statement {
      */
     public Optional<Expression> getValue() {
         return Optional.ofNullable(value);
+    }
+
+    public void setValue(Expression value) {
+        this.value = value;
     }
 
     /**

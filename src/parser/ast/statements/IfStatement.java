@@ -13,7 +13,7 @@ import java.util.List;
  * Grammar: IfStatement → if Expression then Body [ else Body ] end
  */
 public class IfStatement extends Statement {
-    private final Expression condition;
+    private Expression condition; // used for syntax, optimized at semantic stage
     private final List<Statement> thenBranch;
     private final List<Statement> elseBranch;
 
@@ -32,6 +32,10 @@ public class IfStatement extends Statement {
         return condition;
     }
 
+    public void setCondition(Expression condition) {
+        this.condition = condition;
+    }
+
     /**
      * @return then branch (true)
      */
@@ -44,6 +48,32 @@ public class IfStatement extends Statement {
      */
     public List<Statement> getElseBranch() {
         return elseBranch != null ? Collections.unmodifiableList(elseBranch) : null;
+    }
+
+    /**
+     * Used to update the body in case of optimizations
+     *
+     * @param list new body
+     */
+    public void setThenBranch(List<Statement> list) {
+        if (thenBranch == null) {
+            return;
+        }
+        thenBranch.clear();
+        thenBranch.addAll(list);
+    }
+
+    /**
+     * Used to update the body in case of optimizations
+     *
+     * @param list new body
+     */
+    public void setElseBranch(List<Statement> list) {
+        if (elseBranch == null) {
+            return;
+        }
+        elseBranch.clear();
+        elseBranch.addAll(list);
     }
 
     /**
