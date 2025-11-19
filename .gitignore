@@ -30,3 +30,7 @@ bin/
 ### Mac OS ###
 .DS_Store
 OCompiler.iml
+
+### OUR FILES ###
+src/outcode/src
+src/outcode/app
