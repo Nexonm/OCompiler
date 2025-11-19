@@ -167,4 +167,59 @@ Simple compiler project for Compiler Construction course at Innopolis University
 - ✓ **Change detection** - Returns boolean indicating if AST was modified
 - ✓ **Optimization report** - Console output showing results per pass
 
+## Compilation
 
+```txt
+O Code
+    ↓
+O Compiler (generates .j files)
+    ↓
+Jasmin Assembler (converts .j → .class)
+    ↓
+JVM (executes .class files)
+```
+
+## Sequence of implementation
+1. **LabelGenerator**
+2. **InstructionEmitter**
+3. **LocalVariableAllocator**
+4. **MethodContext**
+5. **JasminCodeGenerator**
+
+## Compilation guide
+
+First, create required directories. They are gitIgnored.
+```bash
+mkdir src/outcode
+mkdir src/outcode/app
+mkdir src/outcode/src
+```
+
+Then, create a file for testing:
+```bash
+touch src/outcode/Test.txt
+```
+Paste a code in there:
+```java
+public class Test {
+    public static void main(String[] args) {
+        Counter counter = new Counter();
+        System.out.println("Counter created successfully!");
+        System.out.println("This proves your O compiler works!");
+   }
+}
+```
+Run the program using run button (really, use IDE)
+
+Compile jasmin code into .class and run it:
+```bash
+# Compile our jasmin code
+java -jar jasmin.jar src/outcode/src/Counter.j -d src/outcode/app
+# Compile test java class
+mv src/outcode/Test.txt src/outcode/Test.java
+javac -cp src/outcode/app src/outcode/Test.java
+mv src/outcode/Test.java src/outcode/Test.txt
+mv src/outcode/Test.class src/outcode/app
+# Run the code!
+java -cp src/outcode/app Test
+```

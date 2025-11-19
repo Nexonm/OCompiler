@@ -1,3 +1,4 @@
+import codegen.JasminCodeGenerator;
 import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenPrinter;
@@ -19,8 +20,9 @@ import java.util.List;
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "testTemp.o";
+    private final static String FILE_NAME = "test2.o";
     private final static String DIRECTORY = "./src/tests";
+    private final static String OUTPUT_DIR = "./src/outcode/src";  // ← ADD THIS
     public static void main(String[] args) {
         test();
 
@@ -78,17 +80,49 @@ public class LexerExample {
         System.out.println(astPrinter.print(ast));
 
         // Step 4.4: Constant Folding
-        ConstantFolder folder = new ConstantFolder();
-        folder.optimize(ast);
-        System.out.println("=== Constant Folder: Passed");
-        System.out.println(astPrinter.print(ast));
+        System.out.println("=== Constant Folding ===");
+        int totalFolded = 0;
+        int iteration = 0;
+        while (true) {
+            iteration++;
+            ConstantFolder folder = new ConstantFolder();
+            boolean changed = folder.optimize(ast);
+            totalFolded += folder.getExpressionsFolded();
 
-//        ConstantFolder folder2 = new ConstantFolder();
-//        folder2.optimize(ast);
-//        System.out.println("=== Constant Folder2: Passed");
-//        System.out.println(astPrinter.print(ast));
+            if (!changed || folder.getExpressionsFolded() == 0) {
+                break;
+            }
 
-        System.out.println("FINISH!");
+            if (iteration > 10) {
+                System.out.println("Warning: Constant folding exceeded 10 iterations");
+                break;
+            }
+        }
+        System.out.println("Constant folding complete: " + totalFolded +
+                " expression(s) folded in " + iteration + " pass(es)");
+
+
+
+        System.out.println("\n======= Code Generation stage =======");
+
+        // Step 5: Generate Jasmin code
+        JasminCodeGenerator codegen = new JasminCodeGenerator(OUTPUT_DIR);
+
+        try {
+            codegen.generate(ast);
+            System.out.println("=== Code generation: SUCCESS ===");
+            System.out.println("Jasmin files written to: " + OUTPUT_DIR);
+            System.out.println("\nNext steps:");
+            System.out.println("  1. Assemble with Jasmin: java -jar jasmin.jar " + OUTPUT_DIR + "/*.j");
+            System.out.println("  2. Run with JVM: java -cp " + OUTPUT_DIR + " YourClassName");
+        } catch (Exception e) {
+            System.err.println("=== Code generation: FAILED ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            return;
+        }
+
+        System.out.println("\n======= COMPILATION COMPLETE! =======");
 
     }
 
