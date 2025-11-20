@@ -170,7 +170,7 @@ Simple compiler project for Compiler Construction course at Innopolis University
 ## Compilation
 
 ```txt
-O Code
+O Code (.o files)
     ↓
 O Compiler (generates .j files)
     ↓
@@ -178,13 +178,6 @@ Jasmin Assembler (converts .j → .class)
     ↓
 JVM (executes .class files)
 ```
-
-## Sequence of implementation
-1. **LabelGenerator**
-2. **InstructionEmitter**
-3. **LocalVariableAllocator**
-4. **MethodContext**
-5. **JasminCodeGenerator**
 
 ## Compilation guide
 
