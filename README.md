@@ -205,7 +205,7 @@ public class Test {
     public static void main(String[] args) {
         Counter counter = new Counter();
         System.out.println("Counter created successfully!");
-        System.out.println("This proves your O compiler works!");
+        System.out.println("If you read this, compilation succeeded!");
    }
 }
 ```
@@ -214,7 +214,7 @@ Run the program using run button (really, use IDE)
 Compile jasmin code into .class and run it:
 ```bash
 # Compile our jasmin code
-java -jar src/tools/jasmin.jar src/outcode/src/Counter.j -d src/outcode/app
+java -jar src/tools/jasmin.jar src/outcode/src/*.j -d src/outcode/app
 # Compile test java class
 mv src/outcode/Test.txt src/outcode/Test.java
 javac -cp src/outcode/app src/outcode/Test.java
