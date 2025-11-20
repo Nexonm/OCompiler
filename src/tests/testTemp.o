@@ -1,15 +1,25 @@
-class DeepNesting is
-    method test() : Integer is
-        var step1 : Integer(Integer(5).Plus(Integer(3)))
-        var step2 : Integer(step1.Mult(Integer(2)))
-        var step3 : Boolean(step2.Greater(Integer(10)))
+// Class with member variables
+class A is
+    var count : Integer(222)
 
-        if step3 then
-            return Integer(100).Minus(Integer(50))
-        else
-            return Integer(0)
-        end
+    method getCount() : Integer is
+        return count
     end
+
+    this() is
+    end
+end
+
+class Counter extends A is
+    var isActive : Boolean(true)
+
+    //method inc() is
+    //    count := count.Plus(Integer(1))
+    //end
+
+    //method add(a : Integer) is
+    //    count := count.Plus(a)
+    //end
 
     this() is
     end

@@ -111,9 +111,6 @@ public class LexerExample {
             codegen.generate(ast);
             System.out.println("=== Code generation: SUCCESS ===");
             System.out.println("Jasmin files written to: " + OUTPUT_DIR);
-            System.out.println("\nNext steps:");
-            System.out.println("  1. Assemble with Jasmin: java -jar jasmin.jar " + OUTPUT_DIR + "/*.j");
-            System.out.println("  2. Run with JVM: java -cp " + OUTPUT_DIR + " YourClassName");
         } catch (Exception e) {
             System.err.println("=== Code generation: FAILED ===");
             System.err.println("Error: " + e.getMessage());

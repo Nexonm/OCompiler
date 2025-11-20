@@ -347,7 +347,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         // Evaluate condition
         node.getCondition().accept(this);
 
-        // Branch if false (0)
+        // if == 0 (false), jump to else
         emitter.emitIf("eq", elseLabel);
         currentContext.popStack();
 
@@ -355,6 +355,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         for (Statement stmt : node.getThenBranch()) {
             stmt.accept(this);
         }
+        // Jump to end
         emitter.emitGoto(endLabel);
 
         // Else branch
@@ -365,6 +366,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
             }
         }
 
+        // End label
         emitter.emitLabel(endLabel);
         return null;
     }
