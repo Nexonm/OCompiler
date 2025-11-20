@@ -1,5 +1,7 @@
 package codegen;
 
+import parser.ast.declarations.ClassDecl;
+
 /**
  * Tracks state while generating code for a single method.
  *
@@ -16,7 +18,7 @@ public class MethodContext {
 
     private final LocalVariableAllocator locals;
     private final LabelGenerator labelGen;
-    private final String className;
+    private final ClassDecl classDecl;
     private final String methodName;
     private final boolean isStatic;
 
@@ -30,13 +32,13 @@ public class MethodContext {
      * @param methodName The method name
      * @param isStatic true if method is static
      */
-    public MethodContext(String className, String methodName, boolean isStatic) {
-        this.className = className;
+    public MethodContext(ClassDecl classDecl, String methodName, boolean isStatic) {
+        this.classDecl = classDecl;
         this.methodName = methodName;
         this.isStatic = isStatic;
 
         this.locals = new LocalVariableAllocator(isStatic);
-        this.labelGen = new LabelGenerator(className, methodName);
+        this.labelGen = new LabelGenerator(classDecl.getName(), methodName);
 
         this.currentStackDepth = 0;
         this.maxStackDepth = 0;
@@ -73,7 +75,7 @@ public class MethodContext {
         currentStackDepth -= count;
         if (currentStackDepth < 0) {
             throw new IllegalStateException(
-                    "Stack underflow in " + className + "." + methodName +
+                    "Stack underflow in " + classDecl.getName() + "." + methodName +
                             ": depth would be " + currentStackDepth
             );
         }
@@ -281,7 +283,12 @@ public class MethodContext {
      * @return Class name
      */
     public String getClassName() {
-        return className;
+        return classDecl.getName();
+    }
+
+
+    public ClassDecl getClassDecl() {
+        return classDecl;
     }
 
     /**
@@ -395,7 +402,7 @@ public class MethodContext {
         return String.format(
                 "MethodContext{class=%s, method=%s, static=%b, " +
                         "currentStack=%d, maxStack=%d, maxLocals=%d}",
-                className, methodName, isStatic,
+                classDecl.getName(), methodName, isStatic,
                 currentStackDepth, maxStackDepth, getMaxLocals()
         );
     }
@@ -407,7 +414,7 @@ public class MethodContext {
      */
     public String getDetailedState() {
         StringBuilder sb = new StringBuilder();
-        sb.append("MethodContext for ").append(className).append(".")
+        sb.append("MethodContext for ").append(classDecl.getName()).append(".")
                 .append(methodName).append("\n");
         sb.append("  Static: ").append(isStatic).append("\n");
         sb.append("  Current stack depth: ").append(currentStackDepth).append("\n");

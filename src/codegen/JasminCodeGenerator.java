@@ -97,7 +97,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         // 4. Methods
         for (MemberDecl member : classDecl.getMembers()) {
             if (member instanceof MethodDecl) {
-                generateMethod((MethodDecl) member);
+                generateMethod((MethodDecl) member, classDecl);
             }
         }
 
@@ -112,7 +112,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
             paramDesc.append(getTypeDescriptor(param.getResolvedType()));
         }
 
-        currentContext = new MethodContext(currentClassName, "<init>", false);
+        currentContext = new MethodContext(classDecl, "<init>", false);
 
         for (Parameter param : constructor.getParameters()) {
             boolean isWide = isWideType(param.getResolvedType());
@@ -173,7 +173,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         currentContext = null;
     }
 
-    private void generateMethod(MethodDecl method) {
+    private void generateMethod(MethodDecl method, ClassDecl classDecl) {
         // Build descriptor
         StringBuilder descriptor = new StringBuilder("(");
         for (Parameter param : method.getParameters()) {
@@ -183,7 +183,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         descriptor.append(getTypeDescriptor(method.getReturnType()));
 
         // Create context
-        currentContext = new MethodContext(currentClassName, method.getName(), false);
+        currentContext = new MethodContext(classDecl, method.getName(), false);
 
         for (Parameter param : method.getParameters()) {
             boolean isWide = isWideType(param.getResolvedType());
@@ -303,23 +303,39 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(Assignment node) {
-        // Get variable slot
-        int slot = currentContext.getSlot(node.getTargetName());
-        if (slot == -1) {
-            throw new RuntimeException("Undefined stack variable: " + node.getTargetName());
+
+        // Check if this is a field assignment
+        boolean isField = isField(node.getTargetName(), currentContext.getClassDecl());
+        if (isField) {
+            // Put field on stack
+            emitter.emitLoad(0, 'a');  // Load 'this'
+//            emitter.emit("dup");
+            currentContext.pushStack(1);
+            // Evaluate value
+            node.getValue().accept(this);
+
+            // Store value to field
+            String descriptor = getTypeDescriptor(node.getValue().getInferredType());
+            emitter.emitFieldAccess(currentClassName, node.getTargetName(), descriptor, false);
+//            currentContext.popStack(2);
+            currentContext.popStack(2);
+        } else {
+            // Local variable assignment
+            int slot = currentContext.getSlot(node.getTargetName());
+            if (slot == -1) {
+                throw new RuntimeException("Undefined stack variable: " + node.getTargetName());
+            }
+            // evaluate value
+            node.getValue().accept(this);
+
+            char typeChar = getTypeChar(node.getValue().getInferredType());
+            boolean isWide = isWideType(node.getValue().getInferredType());
+            emitter.emitStore(slot, typeChar);
+            currentContext.recordStore(isWide);
         }
 
         // Evaluate value
-        node.getValue().accept(this);
-
-        // Store to variable
-        Type varType = node.getValue().getInferredType();  // Type of variable
-        char typeChar = getTypeChar(varType);
-        boolean isWide = isWideType(varType);
-
-        emitter.emitStore(slot, typeChar);
-        currentContext.recordStore(isWide);
-
+//        node.getValue().accept(this);
         return null;
     }
 
@@ -430,20 +446,38 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(IdentifierExpr node) {
-        int slot = currentContext.getSlot(node.getName());
-        if (slot == -1) {
-            throw new RuntimeException("Undefined variable: " + node.getName());
+        boolean isField = isField(node.getName(), currentContext.getClassDecl());
+        if (isField) {
+            // Field access
+            emitter.emitLoad(0, 'a');  // Load 'this'
+            currentContext.pushStack();
+
+            Type fieldType = node.getInferredType();
+            char typeChar = getTypeChar(fieldType);
+            boolean isWide = isWideType(fieldType);
+
+            String descriptor = getTypeDescriptor(fieldType);
+            emitter.emitFieldAccess(currentClassName, node.getName(), descriptor, true);
+
+            currentContext.popStack();
+            currentContext.pushStack(isWide ? 2 : 1);
+        } else {
+            // Local variable access
+            int slot = currentContext.getSlot(node.getName());
+            if (slot == -1) {
+                throw new RuntimeException("Undefined variable: " + node.getName());
+            }
+
+            Type type = node.getResolvedDecl().getDeclaredType();
+            char typeChar = getTypeChar(type);
+            boolean isWide = isWideType(type);
+
+            emitter.emitLoad(slot, typeChar);
+            currentContext.recordLoad(isWide);
         }
-
-        Type type = node.getResolvedDecl().getDeclaredType();
-        char typeChar = getTypeChar(type);
-        boolean isWide = isWideType(type);
-
-        emitter.emitLoad(slot, typeChar);
-        currentContext.recordLoad(isWide);
-
         return null;
     }
+
 
     @Override
     public Void visit(ThisExpr node) {
@@ -454,39 +488,44 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(ConstructorCall node) {
-        String className = node.getClassName();
+        // For built-in types in expression context, just push argument value
+        if (StandardLibrary.isBuiltInType(node.getClassName()) &&
+                node.getArguments().size() == 1) {
 
-        // Create object
-        emitter.emitNew(className);
-        currentContext.pushStack(2);  // new + dup pushes 2 references
-
-        // Evaluate arguments
-        for (Expression arg : node.getArguments()) {
+            Expression arg = node.getArguments().get(0);
             arg.accept(this);
-        }
+        } else {
+            // For user-defined types or complex constructors, create object
+            emitter.emitNew(node.getClassName());
+            currentContext.pushStack(2);  // new + dup pushes 2 references
 
-        // Build constructor descriptor
-        StringBuilder descriptor = new StringBuilder("(");
-        for (Expression arg : node.getArguments()) {
-            descriptor.append(getTypeDescriptor(arg.getInferredType()));
-        }
-        descriptor.append(")V");
-
-        // Call constructor
-        emitter.emitInvoke(className, "<init>", descriptor.toString(), "special");
-
-        // invokespecial pops: reference + all arguments
-        int argCount = node.getArguments().size();
-        for (Expression arg : node.getArguments()) {
-            if (isWideType(arg.getInferredType())) {
-                argCount++;  // Wide types count as 2
+            // Evaluate arguments
+            for (Expression arg : node.getArguments()) {
+                arg.accept(this);
             }
-        }
-        currentContext.popStack(1 + argCount);  // 1 for reference, rest for args
 
-        // Stack now has 1 reference (from dup)
+            // Build constructor descriptor
+            StringBuilder descriptor = new StringBuilder("(");
+            for (Expression arg : node.getArguments()) {
+                descriptor.append(getTypeDescriptor(arg.getInferredType()));
+            }
+            descriptor.append(")V");
+
+            // Call constructor
+            emitter.emitInvoke(node.getClassName(), "<init>", descriptor.toString(), "special");
+
+            // invokespecial pops: reference + all arguments
+            int argCount = node.getArguments().size();
+            for (Expression arg : node.getArguments()) {
+                if (isWideType(arg.getInferredType())) {
+                    argCount++;  // Wide types count as 2
+                }
+            }
+            currentContext.popStack(1 + argCount);  // 1 for reference, rest for args
+        }
         return null;
     }
+
 
     @Override
     public Void visit(MethodCall node) {
@@ -817,6 +856,22 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     }
 
     // ========== TYPE HELPERS ==========
+
+    /**
+     * Check if the given variable name is a field of the current class.
+     */
+    private boolean isField(String name, ClassDecl classDecl) {
+        for (MemberDecl member : classDecl.getMembers()) {
+            if (member instanceof VariableDecl) {
+                VariableDecl field = (VariableDecl) member;
+                if (field.getName().equals(name)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
     /**
      * Get JVM type descriptor for a type.

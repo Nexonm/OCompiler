@@ -3,6 +3,19 @@ class Counter is
     var count : Integer(0)
     var isActive : Boolean(true)
 
+    method inc() is
+        var tmp : count.Plus(Integer(1))
+        count := tmp
+    end
+
+    method add(a : Integer) is
+        count := count.Plus(a)
+    end
+
+    method getCount() : Integer is
+        return count
+    end
+
     this() is
     end
 end

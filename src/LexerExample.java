@@ -25,7 +25,6 @@ public class LexerExample {
     private final static String OUTPUT_DIR = "./src/outcode/src";  // ← ADD THIS
     public static void main(String[] args) {
         test();
-
     }
 
     private static void test() {
