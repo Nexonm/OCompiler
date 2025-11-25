@@ -20,16 +20,21 @@ import java.util.List;
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "test2.o";
+    private final static String FILE_NAME = "test6.o";
     private final static String DIRECTORY = "./src/tests";
     private final static String OUTPUT_DIR = "./src/outcode/src";  // ← ADD THIS
     public static void main(String[] args) {
-        test();
+        String filePath = DIRECTORY + "/" + FILE_NAME;
+        if (args.length > 0) {
+            filePath = args[0];
+        }
+        test(filePath);
     }
 
-    private static void test() {
+    private static void test(String filePath) {
+        System.out.println("Processing file: " + filePath);
         System.out.println("======= Lexer Stage =======");
-        String code = readFile();
+        String code = readFile(filePath);
         // 1. Tokenize
         Lexer lexer = new Lexer(code);
         List<Token> tokens = lexer.tokenize();
@@ -122,14 +127,14 @@ public class LexerExample {
 
     }
 
-    private static String readFile() {
+    private static String readFile(String filePath) {
         StringBuilder sb = new StringBuilder();
-        try(BufferedReader br = new BufferedReader(new FileReader(DIRECTORY + "/" + FILE_NAME))) {
+        try(BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             for(String line; (line = br.readLine()) != null; ) {
                 sb.append(line).append("\n");
             }
         }catch (Exception e) {
-            System.out.println("Cannot open file: " + FILE_NAME);
+            System.out.println("Cannot open file: " + filePath);
             e.printStackTrace();
         }
         return sb.toString();

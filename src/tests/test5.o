@@ -2,9 +2,9 @@
 class IfTest is
     method check(x : Integer) : Boolean is
         if x.Greater(Integer(5)) then
-            return Boolean(True)
+            return Boolean(true)
         else
-            return Boolean(False)
+            return Boolean(false)
         end
     end
 

@@ -355,8 +355,14 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         for (Statement stmt : node.getThenBranch()) {
             stmt.accept(this);
         }
-        // Jump to end
-        emitter.emitGoto(endLabel);
+        
+        // Jump to end (optimization: skip if last statement is return)
+        boolean thenReturns = !node.getThenBranch().isEmpty() && 
+                node.getThenBranch().get(node.getThenBranch().size() - 1) instanceof ReturnStatement;
+        
+        if (!thenReturns) {
+            emitter.emitGoto(endLabel);
+        }
 
         // Else branch
         emitter.emitLabel(elseLabel);
@@ -368,6 +374,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
         // End label
         emitter.emitLabel(endLabel);
+        emitter.emit("nop"); // Ensure label targets a valid instruction
         return null;
     }
 
@@ -396,6 +403,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
         // Loop end
         emitter.emitLabel(endLabel);
+        emitter.emit("nop"); // Ensure label targets a valid instruction
         return null;
     }
 
