@@ -161,35 +161,11 @@ public class Lexer {
         current--;
         column--;
         int start = current;
+        // Read everything until RPAREN
+        while (!isAtEnd() && peek() != ')') {
+            next();
 
-        boolean hasDot = false;
-        while (!isAtEnd()) {
-            char c = peek();
-            if (isDigit(c)) {
-                next();
-            } else if (c == '.') {
-                if (hasDot) {
-                    // Second dot found (e.g. 1.2.3), stop here
-                    break; 
-                }
-                // Check if next char is digit? 
-                // O language methods: 5.Plus(3). If we consume '.', then 'Plus' is next.
-                // If we have 3.14, next is digit.
-                // If we have 5.Plus, '.' starts method call?
-                // Standard lexers usually treat 5. as 5.0 if followed by digit, else 5 and dot.
-                
-                if (isDigit(peekNext())) {
-                    hasDot = true;
-                    next();
-                } else {
-                    // Dot not followed by digit, likely member access (5.Plus)
-                    break;
-                }
-            } else {
-                break;
-            }
         }
-
         String lexeme = source.substring(start, current);
         Span span = Span.singleLine(startLine, startColumn, column);
         // Try to parse as integer first
@@ -203,6 +179,10 @@ public class Lexer {
         // Try to parse as double
         try {
             Double.parseDouble(lexeme);
+            // Check if ends with dot, this is not valid in O language but valid in Java
+            if (lexeme.endsWith(".")) {
+                reportError("Invalid number format, should not end with '.'!", startLine, startColumn, lexeme.length());
+            }
             tokens.add(new Token(TokenType.REAL_LITERAL, lexeme, span));
             return;
         } catch (NumberFormatException e) {
