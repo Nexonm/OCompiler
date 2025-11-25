@@ -237,9 +237,15 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         // Check if this is a built-in type constructor with literal
         if (initializer instanceof ConstructorCall) {
             ConstructorCall ctorCall = (ConstructorCall) initializer;
+            String className = ctorCall.getClassName();
 
-            if (StandardLibrary.isBuiltInType(ctorCall.getClassName()) &&
-                    ctorCall.getArguments().size() == 1) {
+            // Optimize primitive wrappers: Integer, Boolean, Real
+            // Do NOT optimize Array[...] here, it must go through accept()
+            boolean isPrimitiveWrapper = className.equals("Integer") || 
+                                         className.equals("Boolean") || 
+                                         className.equals("Real");
+
+            if (isPrimitiveWrapper && ctorCall.getArguments().size() == 1) {
 
                 Expression arg = ctorCall.getArguments().get(0);
 
@@ -258,7 +264,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
                     arg.accept(this);
                 }
             } else {
-                // User-defined class or complex initialization
+                // User-defined class or Array or complex initialization
                 initializer.accept(this);
             }
         } else {
@@ -279,6 +285,20 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     @Override
     public Void visit(VariableDeclStatement node) {
         node.getVariableDecl().accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visit(ExpressionStatement node) {
+        node.getExpression().accept(this);
+        
+        Type type = node.getExpression().getInferredType();
+        if (type != null && !(type instanceof VoidType)) {
+            // Expression statement result is unused, pop it off the stack
+            int slots = isWideType(type) ? 2 : 1;
+            currentContext.popStack(slots);
+        }
+        
         return null;
     }
 
@@ -498,6 +518,12 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(ConstructorCall node) {
+        // Handle Array instantiation
+        if (node.getClassName().startsWith("Array[")) {
+             generateArrayInstantiation(node);
+             return null;
+        }
+
         // For built-in types in expression context, just push argument value
         if (StandardLibrary.isBuiltInType(node.getClassName()) &&
                 node.getArguments().size() == 1) {
@@ -537,10 +563,48 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     }
 
 
+    private void generateArrayInstantiation(ConstructorCall node) {
+        // Expect 1 argument (size)
+        Expression sizeArg = node.getArguments().get(0);
+        sizeArg.accept(this); // Pushes size (int)
+
+        Type type = node.getResolvedType();
+        // Fallback if resolvedType not set (e.g. if semantic analysis failed but we proceeded)
+        if (type == null) {
+             // We could try to parse it again, but better to fail or assume object
+             throw new RuntimeException("Array type not resolved for " + node.getClassName());
+        }
+        
+        if (type instanceof ArrayType) {
+             Type elemType = ((ArrayType) type).getElementType();
+             String name = elemType.getName();
+             
+             if (name.equals("Integer")) {
+                 emitter.emit("newarray int");
+             } else if (name.equals("Boolean")) {
+                 emitter.emit("newarray int"); // Boolean is int
+             } else if (name.equals("Real")) {
+                 emitter.emit("newarray double");
+             } else {
+                 // Object array
+                 // anewarray takes class name
+                 emitter.emit("anewarray " + name);
+             }
+        }
+        
+        currentContext.popStack(); // pop size
+        currentContext.pushStack(); // push array ref
+    }
+
     @Override
     public Void visit(MethodCall node) {
         String methodName = node.getMethodName();
         Type targetType = node.getTarget().getInferredType();
+
+        if (targetType instanceof ArrayType) {
+            generateArrayMethodCall(node, (ArrayType) targetType);
+            return null;
+        }
 
         // Check if built-in method
         if (StandardLibrary.isBuiltInType(targetType.getName())) {
@@ -550,6 +614,61 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         }
 
         return null;
+    }
+
+    private void generateArrayMethodCall(MethodCall node, ArrayType arrayType) {
+        String methodName = node.getMethodName();
+        
+        // Evaluate target (array ref)
+        node.getTarget().accept(this);
+        
+        // Evaluate arguments
+        for (Expression arg : node.getArguments()) {
+            arg.accept(this);
+        }
+        
+        if (methodName.equals("get")) {
+            // Stack: array_ref, index
+            // Op: xaload
+            Type elemType = arrayType.getElementType();
+            String name = elemType.getName();
+            
+            if (name.equals("Integer") || name.equals("Boolean")) {
+                emitter.emit("iaload");
+            } else if (name.equals("Real")) {
+                emitter.emit("daload");
+            } else {
+                emitter.emit("aaload");
+            }
+            
+            // Stack update
+            currentContext.popStack(2); // array + index
+            currentContext.pushStack(isWideType(elemType) ? 2 : 1);
+            
+        } else if (methodName.equals("set")) {
+             // Stack: array_ref, index, value
+             // Op: xastore
+            Type elemType = arrayType.getElementType();
+            String name = elemType.getName();
+            
+            if (name.equals("Integer") || name.equals("Boolean")) {
+                emitter.emit("iastore");
+            } else if (name.equals("Real")) {
+                emitter.emit("dastore");
+            } else {
+                emitter.emit("aastore");
+            }
+            
+            // Stack update
+            int valueSlots = isWideType(elemType) ? 2 : 1;
+            currentContext.popStack(2 + valueSlots); // array + index + value
+            
+        } else if (methodName.equals("Length")) {
+            // Stack: array_ref
+            emitter.emit("arraylength");
+            currentContext.popStack();
+            currentContext.pushStack(); // int
+        }
     }
 
     /**
@@ -889,6 +1008,10 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     private String getTypeDescriptor(Type type) {
         if (type == null) {
             return "V";  // void
+        }
+        
+        if (type instanceof ArrayType) {
+            return "[" + getTypeDescriptor(((ArrayType) type).getElementType());
         }
 
         if (type instanceof VoidType) {

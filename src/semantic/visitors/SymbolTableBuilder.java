@@ -9,6 +9,7 @@ import semantic.scope.GlobalScope;
 import semantic.scope.LocalScope;
 import semantic.scope.Scope;
 import semantic.semantic.SemanticException;
+import semantic.types.ArrayType;
 import semantic.types.BuiltInTypes;
 import semantic.types.ClassType;
 import semantic.types.Type;
@@ -287,6 +288,16 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
      * Resolve parameter type name to Type object.
      */
     private Type resolveParameterType(String typeName, Span span) {
+        // Handle Array types
+        if (typeName.startsWith("Array[") && typeName.endsWith("]")) {
+            String innerName = typeName.substring(6, typeName.length() - 1);
+            Type innerType = resolveParameterType(innerName, span);
+            if (innerType != null) {
+                return new ArrayType(innerType);
+            }
+            return null; // Error already reported in recursive call
+        }
+
         // Check built-in types
         Type builtIn = BuiltInTypes.getBuiltInType(typeName);
         if (builtIn != null) {
@@ -359,6 +370,12 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
         // Visit initializer
         varDecl.accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visit(ExpressionStatement node) {
+        node.getExpression().accept(this);
         return null;
     }
 
@@ -460,6 +477,23 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
     @Override
     public Void visit(ConstructorCall node) {
+        String className = node.getClassName();
+        
+        // Handle Array types
+        if (className.startsWith("Array[") && className.endsWith("]")) {
+            String innerName = className.substring(6, className.length() - 1);
+            Type innerType = resolveParameterType(innerName, node.getSpan());
+            if (innerType != null) {
+                node.setResolvedType(new ArrayType(innerType));
+            }
+            
+            // Visit arguments
+            for (Expression arg : node.getArguments()) {
+                arg.accept(this);
+            }
+            return null;
+        }
+
         // Resolve class name
         Object classObj = globalScope.resolve(node.getClassName());
 

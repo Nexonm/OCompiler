@@ -1,0 +1,58 @@
+class ArrayTest is
+    var ints : Array[Integer](10)
+    var reals : Array[Real](5)
+    var bools : Array[Boolean](2)
+
+    this() is
+        ints.set(0, 42)
+        ints.set(1, 101)
+        reals.set(0, 3.14)
+        reals.set(1, 2.718)
+        bools.set(0, true)
+        bools.set(1, false)
+    end
+
+    method getInt(i : Integer) : Integer is
+        return ints.get(i)
+    end
+
+    method getReal(i : Integer) : Real is
+        return reals.get(i)
+    end
+
+    method getBool(i : Integer) : Boolean is
+        return bools.get(i)
+    end
+    
+    method getLength() : Integer is
+        return ints.Length()
+    end
+
+    method sumMyInts() : Integer is
+        var sum : Integer(0)
+        var i : Integer(0)
+        while i.Less(ints.Length()) loop
+            sum := sum.Plus(ints.get(i))
+            i := i.Plus(Integer(1))
+        end
+        return sum
+    end
+
+    method sum(arr : Array[Integer]) : Integer is
+        var sum : Integer(0)
+        var i : Integer(0)
+        while i.Less(arr.Length()) loop
+            sum := sum.Plus(arr.get(i))
+            i := i.Plus(Integer(1))
+        end
+        return sum
+    end
+
+    method testSum() : Integer is
+        var localArr : Array[Integer](3)
+        localArr.set(0, 1)
+        localArr.set(1, 2)
+        localArr.set(2, 3)
+        return this.sum(localArr)
+    end
+end

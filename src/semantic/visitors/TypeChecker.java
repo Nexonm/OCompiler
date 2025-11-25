@@ -9,6 +9,7 @@ import semantic.scope.GlobalScope;
 import semantic.semantic.SemanticException;
 import semantic.stdlib.BuiltInMethod;
 import semantic.stdlib.StandardLibrary;
+import semantic.types.ArrayType;
 import semantic.types.BuiltInTypes;
 import semantic.types.ClassType;
 import semantic.types.Type;
@@ -156,6 +157,11 @@ public class TypeChecker implements ASTVisitor<Type> {
     public Type visit(VariableDeclStatement node) {
         node.getVariableDecl().accept(this);
         return null;
+    }
+
+    @Override
+    public Type visit(ExpressionStatement node) {
+        return node.getExpression().accept(this);
     }
 
     @Override
@@ -338,6 +344,23 @@ public class TypeChecker implements ASTVisitor<Type> {
      * Validate built-in type constructor calls.
      */
     private void validateBuiltInConstructor(String className, List<Type> argTypes, Span span) {
+        if (className.startsWith("Array[")) {
+             // Array constructor expects 1 argument (Integer size)
+             if (argTypes.size() != 1) {
+                    errors.add(formatError(
+                            "Array constructor expects 1 argument (size), got " + argTypes.size(),
+                            span
+                    ));
+             } else if (argTypes.get(0) != null &&
+                        !argTypes.get(0).equals(BuiltInTypes.INTEGER)) {
+                 errors.add(formatError(
+                            "Array constructor size must be Integer",
+                            span
+                 ));
+             }
+             return;
+        }
+
         // Built-in types expect specific argument types
         switch (className) {
             case "Integer":
@@ -638,6 +661,16 @@ public class TypeChecker implements ASTVisitor<Type> {
      * Resolve type name to Type object.
      */
     private Type resolveTypeName(String typeName, Span span) {
+        // Handle Array types
+        if (typeName.startsWith("Array[") && typeName.endsWith("]")) {
+            String innerName = typeName.substring(6, typeName.length() - 1);
+            Type innerType = resolveTypeName(innerName, span);
+            if (innerType != null) {
+                return new ArrayType(innerType);
+            }
+            return null;
+        }
+
         // Check built-in types
         Type builtIn = BuiltInTypes.getBuiltInType(typeName);
         if (builtIn != null) {

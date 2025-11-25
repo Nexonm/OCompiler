@@ -1,6 +1,7 @@
 package semantic.stdlib;
 
 import semantic.types.BuiltInTypes;
+import semantic.types.ClassType;
 import semantic.types.Type;
 
 import java.util.*;
@@ -112,6 +113,11 @@ public class StandardLibrary {
      */
     public static BuiltInMethod findMethod(String className, String methodName,
                                            List<Type> argTypes) {
+        // Handle Array methods
+        if (className.startsWith("Array[") && className.endsWith("]")) {
+            return findArrayMethod(className, methodName, argTypes);
+        }
+
         // Build signature
         StringBuilder sigBuilder = new StringBuilder();
         sigBuilder.append(methodName).append("(");
@@ -131,13 +137,46 @@ public class StandardLibrary {
         return BUILT_IN_METHODS.get(key);
     }
 
+    private static BuiltInMethod findArrayMethod(String className, String methodName, List<Type> argTypes) {
+        String innerName = className.substring(6, className.length() - 1);
+        Type elementType;
+        
+        Type builtIn = BuiltInTypes.getBuiltInType(innerName);
+        if (builtIn != null) {
+            elementType = builtIn;
+        } else {
+            // For user types, create a placeholder ClassType (we only need the name for checking)
+            elementType = new ClassType(innerName); 
+        }
+
+        if (methodName.equals("get")) {
+            if (argTypes.size() == 1 && argTypes.get(0).getName().equals("Integer")) {
+                return new BuiltInMethod("get", List.of(BuiltInTypes.INTEGER), elementType);
+            }
+        } else if (methodName.equals("set")) {
+            if (argTypes.size() == 2 && 
+                argTypes.get(0).getName().equals("Integer")) {
+                // For the second argument, we accept if it's the element type (or compatible?)
+                // TypeChecker handles compatibility. Here we just provide the definition.
+                // But wait, if we return a method with signature (Integer, T), TypeChecker will match against it.
+                return new BuiltInMethod("set", List.of(BuiltInTypes.INTEGER, elementType), BuiltInTypes.VOID);
+            }
+        } else if (methodName.equals("Length")) {
+            if (argTypes.isEmpty()) {
+                return new BuiltInMethod("Length", List.of(), BuiltInTypes.INTEGER);
+            }
+        }
+        return null;
+    }
+
     /**
      * Check if a type is a built-in type with methods.
      */
     public static boolean isBuiltInType(String typeName) {
         return typeName.equals("Integer") ||
                 typeName.equals("Boolean") ||
-                typeName.equals("Real");
+                typeName.equals("Real") ||
+                (typeName.startsWith("Array[") && typeName.endsWith("]"));
     }
 
     /**
