@@ -1,4 +1,7 @@
-// Class with Methods and Local Variables
+// Name: Class with Methods and Local Variables
+// Description: Simple class that should pass
+// Expected result: pass
+// Expected fail stage: none
 class Calculator is
     var result : Integer(0)
 

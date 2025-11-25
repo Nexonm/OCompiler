@@ -1,4 +1,7 @@
-// If-Statement
+// Name: If-Statement
+// Description: Test out of Important tests
+// Expected result: pass
+// Expected fail stage: none
 class IfTest is
     method check(x : Integer) : Boolean is
         if x.Greater(Integer(5)) then

@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     private final String outputDir;
+    private final boolean DEBUG;
     private InstructionEmitter emitter;
     private MethodContext currentContext;
     private String currentClassName;
@@ -38,6 +39,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
      */
     public JasminCodeGenerator(String outputDir) {
         this.outputDir = outputDir;
+        this.DEBUG = outputDir == null || outputDir.isEmpty();
     }
 
     /**
@@ -56,6 +58,9 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
                 generateClass(classDecl);
             }
 
+            if (DEBUG) {
+                return;
+            }
             System.out.println("Code generation complete!");
             System.out.println("Generated " + program.getClasses().size() +
                     " .j file(s) in " + outputDir);
@@ -102,6 +107,9 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         }
 
         // 5. Write to file
+        if (DEBUG) {
+            return;
+        }
         writeToFile(classDecl.getName() + ".j", emitter.getCode());
     }
 

@@ -1,0 +1,15 @@
+// Name: Test invalid semantic
+// Description: 5.Plus(...) is forbidden, we cannot call methods on literals
+// Expected result: fail
+// Expected fail stage: semantic
+class Calculator is
+    var result : Integer(0)
+
+    method add(a : Integer, b : Integer) : Integer is
+        var test : b.Plus(2)
+        return a.Plus(b)
+    end
+
+    this() is
+    end
+end

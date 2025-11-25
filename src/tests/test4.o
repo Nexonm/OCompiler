@@ -1,4 +1,7 @@
-// Forward Declaration
+// Name: Forward Declaration
+// Description: Test out of Important tests
+// Expected result: pass
+// Expected fail stage: none
 class ForwardTest is
     method compute(x : Integer) : Integer
 

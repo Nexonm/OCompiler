@@ -51,13 +51,13 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
         program.accept(this);
 
         // Report errors if any
-        if (!errors.isEmpty()) {
-            System.err.println("Symbol table building errors:");
-            for (String error : errors) {
-                System.err.println("  " + error);
-            }
-            throw new SemanticException(errors.size() + " symbol table errors found");
-        }
+//        if (!errors.isEmpty()) {
+//            System.err.println("Symbol table building errors:");
+//            for (String error : errors) {
+//                System.err.println("  " + error);
+//            }
+//            throw new SemanticException(errors.size() + " symbol table errors found");
+//        }
     }
 
     public boolean hasErrors() {

@@ -1,14 +1,13 @@
 // Name: Test Real object creation
-// Description: Real(4.3s3) is forbidden
+// Description: Real(4.3.2) is forbidden
 // Expected result: fail
 // Expected fail stage: lexer
 class Calculator is
     var result : Integer(0)
 
     method add(a : Integer, b : Integer) : Integer is
-        var sum : Real(4.3s3)
-        sum := a.Plus(b)
-        return sum
+        var test : Real(4.3.2)
+        return a.Plus(b)
     end
 
     method getValue() : Integer is
