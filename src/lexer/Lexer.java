@@ -187,6 +187,16 @@ public class Lexer {
             }
         }
 
+        // Check for invalid suffix (e.g. 4.3s3)
+        if (!isAtEnd() && isIdentifierStart(peek())) {
+            while (!isAtEnd() && isIdentifierContinue(peek())) {
+                next();
+            }
+            int length = current - start;
+            reportError("Invalid numeric literal", startLine, startColumn, length);
+            return;
+        }
+
         String lexeme = source.substring(start, current);
         Span span = Span.singleLine(startLine, startColumn, column);
         // Try to parse as integer first
