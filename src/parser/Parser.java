@@ -513,7 +513,7 @@ public class Parser {
             Token nameToken = consume(TokenType.IDENTIFIER, "Expected member or method name");
             String name = nameToken.lexeme();
             if (match(TokenType.LPAREN)) {
-                List<Expression> args = parseArguments();
+                List<Expression> args = parseArguments(true, name);
                 Token rparen = consume(TokenType.RPAREN, "Expected ')'");
                 Span span = expr.getSpan().merge(rparen.span());
                 expr = new MethodCall(expr, name, args, span);
@@ -584,7 +584,7 @@ public class Parser {
                 
                 if (isConstructor) {
                     advance(); // consume '('
-                    List<Expression> args = parseArguments();
+                    List<Expression> args = parseArguments(false, name);
                     Token rparen = consume(TokenType.RPAREN, "Expected ')'");
                     Span span = startSpan.merge(rparen.span());
                     return new ConstructorCall(name, args, span);
@@ -593,7 +593,7 @@ public class Parser {
                     // This should not happen in primary context (methods need a receiver)
                     error("Method call '" + name + "' requires a receiver (use 'this." + name + "(...)')");
                     advance(); // consume '('
-                    List<Expression> args = parseArguments();
+                    List<Expression> args = parseArguments(true, name);
                     Token rparen = consume(TokenType.RPAREN, "Expected ')'");
                     Span span = startSpan.merge(rparen.span());
                     // Return as identifier expression for error recovery
@@ -607,20 +607,29 @@ public class Parser {
         return new UnknownExpression(peek().span());
     }
 
+    private Expression parseArgument(boolean isMethodCall, String methodName) {
+        Expression arg = parseExpression();
+        boolean isArrayMethod = "set".equals(methodName) || "get".equals(methodName);
+        if (isMethodCall && !isArrayMethod && (arg instanceof IntegerLiteral || arg instanceof RealLiteral || arg instanceof BooleanLiteral)) {
+            error("Raw literals are not allowed as arguments to method calls. Use a constructor call, e.g., Integer(2).");
+        }
+        return arg;
+    }
+
     /**
      * Parses a comma-separated list of argument expressions (NEW in Phase 2).
      * Grammar: Arguments → Expression { , Expression }
      *
      * Note: Call this AFTER consuming the opening '('
      */
-    private List<Expression> parseArguments() {
+    private List<Expression> parseArguments(boolean isMethodCall, String methodName) {
         List<Expression> args = new ArrayList<>();
         if (check(TokenType.RPAREN)) {
             return args;
         }
-        args.add(parseExpression());
+        args.add(parseArgument(isMethodCall, methodName));
         while (match(TokenType.COMMA)) {
-            args.add(parseExpression());
+            args.add(parseArgument(isMethodCall, methodName));
         }
         return args;
     }

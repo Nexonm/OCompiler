@@ -156,9 +156,6 @@ public class StandardLibrary {
         } else if (methodName.equals("set")) {
             if (argTypes.size() == 2 && 
                 argTypes.get(0).getName().equals("Integer")) {
-                // For the second argument, we accept if it's the element type (or compatible?)
-                // TypeChecker handles compatibility. Here we just provide the definition.
-                // But wait, if we return a method with signature (Integer, T), TypeChecker will match against it.
                 return new BuiltInMethod("set", List.of(BuiltInTypes.INTEGER, elementType), BuiltInTypes.VOID);
             }
         } else if (methodName.equals("Length")) {
