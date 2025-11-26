@@ -481,6 +481,14 @@ public class TypeChecker implements ASTVisitor<Type> {
 
     @Override
     public Type visit(MethodCall node) {
+        // Explicit restriction on literals
+        if (node.getTarget() instanceof IntegerLiteral ||
+                node.getTarget() instanceof RealLiteral ||
+                node.getTarget() instanceof BooleanLiteral) {
+            errors.add(formatError("Cannot call method on literal directly", node.getTarget().getSpan()));
+            return null;
+        }
+
         // Get target type
         Type targetType = node.getTarget().accept(this);
 
