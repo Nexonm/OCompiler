@@ -7,6 +7,7 @@ public class BuiltInTypes {
     public static final ClassType INTEGER = new ClassType("Integer");
     public static final ClassType BOOLEAN = new ClassType("Boolean");
     public static final ClassType REAL = new ClassType("Real");
+    public static final ClassType PRINTER = new ClassType("Printer");
     public static final VoidType VOID = VoidType.INSTANCE;
 
     public static Type getBuiltInType(String name) {
@@ -14,6 +15,7 @@ public class BuiltInTypes {
             case "Integer" -> INTEGER;
             case "Boolean" -> BOOLEAN;
             case "Real" -> REAL;
+            case "Printer" -> PRINTER;
             default -> null;
         };
     }

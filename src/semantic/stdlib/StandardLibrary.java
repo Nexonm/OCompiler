@@ -19,6 +19,7 @@ public class StandardLibrary {
         initializeIntegerMethods();
         initializeBooleanMethods();
         initializeRealMethods();
+        initializePrinterMethods();
     }
 
     /**
@@ -91,6 +92,17 @@ public class StandardLibrary {
 
         // Conversion
         register("Real", "toInteger", List.of(), intType);
+    }
+
+    private static void initializePrinterMethods() {
+        Type intType = BuiltInTypes.INTEGER;
+        Type boolType = BuiltInTypes.BOOLEAN;
+        Type realType = BuiltInTypes.REAL;
+        Type voidType = BuiltInTypes.VOID;
+
+        register("Printer", "print", List.of(intType), voidType);
+        register("Printer", "print", List.of(boolType), voidType);
+        register("Printer", "print", List.of(realType), voidType);
     }
 
     /**
@@ -173,6 +185,7 @@ public class StandardLibrary {
         return typeName.equals("Integer") ||
                 typeName.equals("Boolean") ||
                 typeName.equals("Real") ||
+                typeName.equals("Printer") ||
                 (typeName.startsWith("Array[") && typeName.endsWith("]"));
     }
 

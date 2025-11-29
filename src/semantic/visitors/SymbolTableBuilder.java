@@ -80,6 +80,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
         globalScope.define("Integer", BuiltInTypes.INTEGER);
         globalScope.define("Boolean", BuiltInTypes.BOOLEAN);
         globalScope.define("Real", BuiltInTypes.REAL);
+        globalScope.define("Printer", BuiltInTypes.PRINTER);
 
         // Register all user-defined classes
         for (ClassDecl classDecl : program.getClasses()) {

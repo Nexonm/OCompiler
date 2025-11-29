@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "testArray.o";
+    private final static String FILE_NAME = "testPrint.o";
     private final static String DIRECTORY = "./src/tests";
     private final static String OUTPUT_DIR = "./src/outcode/src";  // ← ADD THIS
     public static void main(String[] args) {

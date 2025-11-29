@@ -532,6 +532,13 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
              return null;
         }
 
+        // Handle Printer instantiation - it's a virtual object
+        if (node.getClassName().equals("Printer")) {
+            emitter.emit("aconst_null"); // Push a null reference
+            currentContext.pushStack();
+            return null;
+        }
+
         // For built-in types in expression context, just push argument value
         if (StandardLibrary.isBuiltInType(node.getClassName()) &&
                 node.getArguments().size() == 1) {
@@ -687,6 +694,11 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         Type targetType = node.getTarget().getInferredType();
         String typeName = targetType.getName();
 
+        if (typeName.equals("Printer")) {
+            generatePrinterMethodCall(node);
+            return;
+        }
+
         // Evaluate target (pushes the value)
         node.getTarget().accept(this);
 
@@ -760,6 +772,33 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
             default:
                 throw new RuntimeException("Unknown Integer method: " + methodName);
         }
+    }
+
+    private void generatePrinterMethodCall(MethodCall node) {
+        // Get System.out on the stack
+        emitter.emit("getstatic java/lang/System/out Ljava/io/PrintStream;");
+        currentContext.pushStack();
+
+        // Evaluate the argument and push it on the stack
+        Expression arg = node.getArguments().get(0);
+        arg.accept(this);
+
+        // Determine println signature
+        Type argType = arg.getInferredType();
+        String descriptor;
+        char typeChar = getTypeChar(argType);
+        switch (typeChar) {
+            case 'i' -> descriptor = "(I)V";
+            case 'd' -> descriptor = "(D)V";
+            default ->
+                // Fallback for objects
+                    descriptor = "(Ljava/lang/Object;)V";
+        }
+
+        // Invoke println
+        emitter.emitInvoke("java/io/PrintStream", "println", descriptor, "virtual");
+        int argSlots = isWideType(argType) ? 2 : 1;
+        currentContext.popStack(1 + argSlots); // System.out + argument
     }
 
     /**
