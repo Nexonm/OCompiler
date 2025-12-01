@@ -1,0 +1,26 @@
+// Name: Basic Inheritance (parent method call)
+// Description: Child class inherits and calls parent method.
+// Expected result: pass
+// Expected fail stage: none
+
+class Parent is
+    var value : Integer(10)
+
+    method getValue() : Integer is
+        return value
+    end
+
+    this() is
+    end
+end
+
+class Child extends Parent is
+    // Inherits 'value'
+
+    method modGet() : Integer is
+        return this.getValue()
+    end
+
+    this() is
+    end
+end
