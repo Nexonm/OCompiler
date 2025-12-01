@@ -4,7 +4,6 @@ import lexer.Token;
 import lexer.TokenPrinter;
 import parser.ASTTreePrinter;
 import parser.Parser;
-import parser.ast.ASTNode;
 import parser.ast.declarations.Program;
 import semantic.visitors.ConstantFolder;
 import semantic.visitors.DeadCodeReturnEliminator;
@@ -13,16 +12,23 @@ import semantic.visitors.TypeChecker;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Enhanced example usage demonstrating span-based token positioning.
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "testPrint.o";
+    private final static String FILE_NAME = "test2.o";
     private final static String DIRECTORY = "./src/tests";
-    private final static String OUTPUT_DIR = "./src/outcode/src";  // ← ADD THIS
+    private final static String OUTPUT_DIR = "./src/outcode/src";
+    private final static String BYTECODE_DIR = "./src/outcode/app";
     public static void main(String[] args) {
         String filePath = DIRECTORY + "/" + FILE_NAME;
         if (args.length > 0) {
@@ -32,6 +38,8 @@ public class LexerExample {
     }
 
     private static void test(String filePath) {
+        clearOutputDirectories();
+
         System.out.println("Processing file: " + filePath);
         System.out.println("======= Lexer Stage =======");
         String code = readFile(filePath);
@@ -125,6 +133,31 @@ public class LexerExample {
 
         System.out.println("\n======= COMPILATION COMPLETE! =======");
 
+    }
+
+    private static void clearOutputDirectories() {
+        clearDirectory(OUTPUT_DIR);
+        clearDirectory(BYTECODE_DIR);
+    }
+
+    private static void clearDirectory(String directory) {
+        Path dirPath = Paths.get(directory);
+        try {
+            Files.createDirectories(dirPath);
+            try (Stream<Path> paths = Files.walk(dirPath)) {
+                paths.sorted(Comparator.reverseOrder())
+                        .filter(path -> !path.equals(dirPath))
+                        .forEach(path -> {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException e) {
+                                throw new RuntimeException("Failed to delete " + path, e);
+                            }
+                        });
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to clear directory: " + directory, e);
+        }
     }
 
     private static String readFile(String filePath) {
