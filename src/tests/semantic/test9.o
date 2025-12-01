@@ -1,15 +1,20 @@
+// Name: Array Test (First Ilsaf array test)
+// Description: Should work perfectly
+// Expected result: pass
+// Expected fail stage: none
+
 class ArrayTest is
     var ints : Array[Integer](10)
     var reals : Array[Real](5)
     var bools : Array[Boolean](2)
 
     this() is
-        ints.set(0, 42)
-        ints.set(1, 101)
-        reals.set(0, 3.14)
-        reals.set(1, 2.718)
-        bools.set(0, true)
-        bools.set(1, false)
+        ints.set(0, Integer(42))
+        ints.set(1, Integer(101))
+        reals.set(0, Real(3.14))
+        reals.set(1, Real(2.718))
+        bools.set(0, Boolean(true))
+        bools.set(1, Boolean(false))
     end
 
     method getInt(i : Integer) : Integer is

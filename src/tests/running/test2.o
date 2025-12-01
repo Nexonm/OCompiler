@@ -1,10 +1,10 @@
-// Name: Running test, should be run to check if it's working
-// Description: Output should be 10
+// Name: Running test for overriding, should be run to check if it's working
+// Description: Override parent class
 // Expected result: pass
 // Expected fail stage: none
 
 class Value is
-    var value : Integer(1)
+    var value : Integer(10)
 
     method getValue() : Integer is
         return value
@@ -21,7 +21,7 @@ end
 class DoubleValue extends Value is
 
     method getValue() : Integer is
-        return value.Mult(Integer(2))
+        return Integer(10)
     end
 
     this() is

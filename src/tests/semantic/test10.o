@@ -1,6 +1,7 @@
 // Name: Print Test
 // Description: Tests the Printer class for various types.
 // Expected result: pass
+// Expected fail stage: none
 
 class PrintTest is
     method run() is

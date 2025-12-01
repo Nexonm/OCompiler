@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  */
 public class LexerExample {
 
-    private final static String FILE_NAME = "test2.o";
+    private final static String FILE_NAME = "testTemp.o";
     private final static String DIRECTORY = "./src/tests";
     private final static String OUTPUT_DIR = "./src/outcode/src";
     private final static String BYTECODE_DIR = "./src/outcode/app";
