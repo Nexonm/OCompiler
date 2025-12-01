@@ -58,11 +58,14 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
                 generateClass(classDecl);
             }
 
+            boolean entryPointGenerated = generateEntryPoint(program);
+
             if (DEBUG) {
                 return;
             }
             System.out.println("Code generation complete!");
-            System.out.println("Generated " + program.getClasses().size() +
+            int totalFiles = program.getClasses().size() + (entryPointGenerated ? 1 : 0);
+            System.out.println("Generated " + totalFiles +
                     " .j file(s) in " + outputDir);
 
         } catch (IOException e) {
@@ -231,6 +234,105 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         emitter.emitMethodFooter();
 
         currentContext = null;
+    }
+
+    // ========== ENTRY POINT GENERATION ==========
+
+    private boolean generateEntryPoint(Program program) {
+        if (DEBUG) {
+            return false;
+        }
+
+        ClassDecl startClass = null;
+        boolean userDefinedMain = false;
+
+        for (ClassDecl classDecl : program.getClasses()) {
+            if ("Start".equals(classDecl.getName())) {
+                startClass = classDecl;
+            }
+            if ("Main".equals(classDecl.getName())) {
+                userDefinedMain = true;
+            }
+        }
+
+        if (startClass == null) {
+            System.out.println("Skipping entry point generation: no Start class found.");
+            return false;
+        }
+
+        if (userDefinedMain) {
+            throw new RuntimeException("Program already defines class 'Main'; cannot auto-generate entry point.");
+        }
+
+        MethodDecl startMethod = findStartMethod(startClass);
+        if (startMethod == null) {
+            throw new RuntimeException("Start class must declare method 'start()' with no parameters.");
+        }
+
+        if (!startMethod.hasBody()) {
+            throw new RuntimeException("Start.start() must have an implementation.");
+        }
+
+        Type startReturnType = startMethod.getReturnType();
+        if (startReturnType != null && !(startReturnType instanceof VoidType)) {
+            throw new RuntimeException("Start.start() must return void.");
+        }
+
+        if (!hasParameterlessConstructor(startClass)) {
+            throw new RuntimeException("Start class must declare a parameterless constructor (this()).");
+        }
+
+        String startDescriptor = "()" + getTypeDescriptor(startReturnType);
+
+        InstructionEmitter entryEmitter = new InstructionEmitter();
+        entryEmitter.emitClassHeader("Main");
+        emitSyntheticMainConstructor(entryEmitter);
+        emitSyntheticMainMethod(entryEmitter, startClass.getName(), startDescriptor);
+
+        writeToFile("Main.j", entryEmitter.getCode());
+        return true;
+    }
+
+    private MethodDecl findStartMethod(ClassDecl startClass) {
+        for (MemberDecl member : startClass.getMembers()) {
+            if (member instanceof MethodDecl method &&
+                    method.getName().equals("start") &&
+                    method.getParameters().isEmpty()) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private boolean hasParameterlessConstructor(ClassDecl classDecl) {
+        for (MemberDecl member : classDecl.getMembers()) {
+            if (member instanceof ConstructorDecl constructor &&
+                    constructor.getParameters().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void emitSyntheticMainConstructor(InstructionEmitter emitter) {
+        emitter.emitMethodHeader("<init>", "()V");
+        emitter.emitLimits(1, 1);
+        emitter.emit("aload_0");
+        emitter.emitInvoke("java/lang/Object", "<init>", "()V", "special");
+        emitter.emitReturn('v');
+        emitter.emitMethodFooter();
+    }
+
+    private void emitSyntheticMainMethod(InstructionEmitter emitter,
+                                         String startClassName,
+                                         String startDescriptor) {
+        emitter.emitMethodHeader("main", "([Ljava/lang/String;)V", true);
+        emitter.emitLimits(2, 1);
+        emitter.emitNew(startClassName);
+        emitter.emitInvoke(startClassName, "<init>", "()V", "special");
+        emitter.emitInvoke(startClassName, "start", startDescriptor, "virtual");
+        emitter.emitReturn('v');
+        emitter.emitMethodFooter();
     }
 
     /**

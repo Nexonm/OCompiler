@@ -188,31 +188,40 @@ mkdir src/outcode/app
 mkdir src/outcode/src
 ```
 
-Then, create a file for testing:
+Compiling the O Compiler
+
+For example, you can use:
 ```bash
-touch src/outcode/Test.txt
+javac -d out $(find src -path src/outcode -prune -o -name "*.java" -print)
 ```
-Paste a code in there:
+
+To run test code like testTempo.o:
+```bash
+java -cp out LexerExample src/tests/testTempo.o
+```
+
+Whenever your program declares a `class Start` that contains:
+
+- a parameterless constructor `this()`
+- a method `start()` with no parameters that returns `Void`
+
+the code generator emits a synthetic `Main` entry point in `src/outcode/src/Main.j`:
+
 ```java
-public class Test {
+public class Main {
     public static void main(String[] args) {
-        Counter counter = new Counter();
-        System.out.println("Counter created successfully!");
-        System.out.println("If you read this, compilation succeeded!");
-   }
+        Start start = new Start();
+        start.start();
+    }
 }
 ```
-Run the program using run button (really, use IDE)
 
-Compile jasmin code into .class and run it:
+This means you just assemble the generated Jasmin files and run `Main`.
+
+Compile the Jasmin code into `.class` files and run it:
 ```bash
-# Compile our jasmin code
+# Compile our jasmin code (includes Main.j)
 java -jar src/tools/jasmin.jar src/outcode/src/*.j -d src/outcode/app
-# Compile test java class
-mv src/outcode/Test.txt src/outcode/Test.java
-javac -cp src/outcode/app src/outcode/Test.java
-mv src/outcode/Test.java src/outcode/Test.txt
-mv src/outcode/Test.class src/outcode/app
-# Run the code!
-java -cp src/outcode/app Test
+# Run the generated entrypoint
+java -cp src/outcode/app Main
 ```
