@@ -77,6 +77,12 @@ public class TypeChecker implements ASTVisitor<Type> {
 
     @Override
     public Type visit(Program node) {
+        // PASS 0: resolve all class member signatures so cross-class references see types
+        for (ClassDecl classDecl : node.getClasses()) {
+            resolveClassMemberSignatures(classDecl);
+        }
+
+        // PASS 1: type check bodies now that signatures are known
         for (ClassDecl classDecl : node.getClasses()) {
             classDecl.accept(this);
         }
@@ -87,18 +93,7 @@ public class TypeChecker implements ASTVisitor<Type> {
     public Type visit(ClassDecl node) {
         currentClass = node;
 
-        // PASS 1: Resolve all method signatures (return types + parameter types)
-        for (MemberDecl member : node.getMembers()) {
-            if (member instanceof MethodDecl) {
-                MethodDecl method = (MethodDecl) member;
-                resolveMethodSignature(method);
-            } else if (member instanceof ConstructorDecl) {
-                ConstructorDecl ctor = (ConstructorDecl) member;
-                resolveConstructorSignature(ctor);
-            }
-        }
-
-        // PASS 2: Type check all member bodies
+        // Only type check member bodies; signatures were resolved globally
         for (MemberDecl member : node.getMembers()) {
             member.accept(this);
         }
@@ -862,6 +857,19 @@ public class TypeChecker implements ASTVisitor<Type> {
         for (Parameter param : ctor.getParameters()) {
             Type paramType = resolveTypeName(param.getTypeName(), param.getSpan());
             param.setResolvedType(paramType);
+        }
+    }
+
+    /**
+     * Resolve all method and constructor signatures declared within a class.
+     */
+    private void resolveClassMemberSignatures(ClassDecl classDecl) {
+        for (MemberDecl member : classDecl.getMembers()) {
+            if (member instanceof MethodDecl) {
+                resolveMethodSignature((MethodDecl) member);
+            } else if (member instanceof ConstructorDecl) {
+                resolveConstructorSignature((ConstructorDecl) member);
+            }
         }
     }
 
