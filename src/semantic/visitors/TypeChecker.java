@@ -506,6 +506,11 @@ public class TypeChecker implements ASTVisitor<Type> {
             Type argType = arg.accept(this);
             argTypes.add(argType);
         }
+
+        if (targetType instanceof ArrayType) {
+            return handleArrayMethodCall(node, (ArrayType) targetType, argTypes);
+        }
+
         // Check if this is a built-in type
         if (StandardLibrary.isBuiltInType(targetType.getName())) {
             return handleBuiltInMethodCall(node, targetType, argTypes);
@@ -540,6 +545,82 @@ public class TypeChecker implements ASTVisitor<Type> {
         node.setInferredType(returnType);
 
         return returnType;
+    }
+
+    /**
+     * Handle method calls on array types.
+     */
+    private Type handleArrayMethodCall(MethodCall node, ArrayType arrayType,
+                                       List<Type> argTypes) {
+        String methodName = node.getMethodName();
+        Type elementType = arrayType.getElementType();
+
+        switch (methodName) {
+            case "get": {
+                if (argTypes.size() != 1) {
+                    errors.add(formatError(
+                            "Array.get expects 1 argument, got " + argTypes.size(),
+                            node.getSpan()
+                    ));
+                    return null;
+                }
+                Type indexType = argTypes.get(0);
+                if (indexType != null && !indexType.equals(BuiltInTypes.INTEGER)) {
+                    errors.add(formatError(
+                            "Array.get index must be Integer",
+                            node.getArguments().get(0).getSpan()
+                    ));
+                    return null;
+                }
+                node.setInferredType(elementType);
+                return elementType;
+            }
+            case "set": {
+                if (argTypes.size() != 2) {
+                    errors.add(formatError(
+                            "Array.set expects 2 arguments, got " + argTypes.size(),
+                            node.getSpan()
+                    ));
+                    return null;
+                }
+                Type indexType = argTypes.get(0);
+                if (indexType != null && !indexType.equals(BuiltInTypes.INTEGER)) {
+                    errors.add(formatError(
+                            "Array.set index must be Integer",
+                            node.getArguments().get(0).getSpan()
+                    ));
+                    return null;
+                }
+                Type valueType = argTypes.get(1);
+                if (valueType != null && !valueType.isCompatibleWith(elementType)) {
+                    errors.add(formatError(
+                            String.format("Array.set value type mismatch: expected %s, got %s",
+                                    elementType.getName(), valueType.getName()),
+                            node.getArguments().get(1).getSpan()
+                    ));
+                    return null;
+                }
+                node.setInferredType(VoidType.INSTANCE);
+                return VoidType.INSTANCE;
+            }
+            case "Length": {
+                if (!argTypes.isEmpty()) {
+                    errors.add(formatError(
+                            "Array.Length expects 0 arguments",
+                            node.getSpan()
+                    ));
+                    return null;
+                }
+                node.setInferredType(BuiltInTypes.INTEGER);
+                return BuiltInTypes.INTEGER;
+            }
+            default:
+                errors.add(formatError(
+                        "Unknown array method: " + methodName,
+                        node.getSpan()
+                ));
+                return null;
+        }
     }
 
     /**
