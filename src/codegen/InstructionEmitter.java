@@ -102,7 +102,7 @@ public class InstructionEmitter {
      * @param descriptor Field type descriptor (I, Z, D, LClassName;)
      */
     public void emitField(String name, String descriptor) {
-        emitRaw(".field private " + name + " " + descriptor);
+        emitRaw(".field public " + name + " " + descriptor);
     }
 
     // ========== CONSTRUCTOR HELPERS ==========
