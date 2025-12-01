@@ -1,6 +1,7 @@
 // Name: Multilevel Inheritance (grand -> parent -> child)
 // Description: Child inherits from Grandparent through Parent.
 // Expected result: pass
+// Expected fail stage: none
 
 class GrandParent is
     var familyName : Integer(100)
