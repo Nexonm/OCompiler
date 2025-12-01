@@ -332,21 +332,21 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     @Override
     public Void visit(Assignment node) {
 
-        // Check if this is a field assignment
-        boolean isField = isField(node.getTargetName(), currentContext.getClassDecl());
-        if (isField) {
-            // Put field on stack
+        // Check if this is a field assignment (including inherited fields)
+        FieldInfo fieldInfo = resolveFieldInfo(node.getTargetName(), currentContext.getClassDecl());
+        if (fieldInfo != null) {
+            // Load 'this'
             emitter.emitLoad(0, 'a');  // Load 'this'
-//            emitter.emit("dup");
             currentContext.pushStack(1);
             // Evaluate value
             node.getValue().accept(this);
 
             // Store value to field
-            String descriptor = getTypeDescriptor(node.getValue().getInferredType());
-            emitter.emitFieldAccess(currentClassName, node.getTargetName(), descriptor, false);
-//            currentContext.popStack(2);
-            currentContext.popStack(2);
+            Type fieldType = fieldInfo.field.getDeclaredType();
+            String descriptor = getTypeDescriptor(fieldType);
+            emitter.emitFieldAccess(fieldInfo.declaringClass.getName(), node.getTargetName(), descriptor, false);
+            int valueSlots = isWideType(fieldType) ? 2 : 1;
+            currentContext.popStack(1 + valueSlots); // value + reference
         } else {
             // Local variable assignment
             int slot = currentContext.getSlot(node.getTargetName());
@@ -484,18 +484,17 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(IdentifierExpr node) {
-        boolean isField = isField(node.getName(), currentContext.getClassDecl());
-        if (isField) {
+        FieldInfo fieldInfo = resolveFieldInfo(node.getName(), currentContext.getClassDecl());
+        if (fieldInfo != null) {
             // Field access
             emitter.emitLoad(0, 'a');  // Load 'this'
             currentContext.pushStack();
 
             Type fieldType = node.getInferredType();
-            char typeChar = getTypeChar(fieldType);
             boolean isWide = isWideType(fieldType);
 
             String descriptor = getTypeDescriptor(fieldType);
-            emitter.emitFieldAccess(currentClassName, node.getName(), descriptor, true);
+            emitter.emitFieldAccess(fieldInfo.declaringClass.getName(), node.getName(), descriptor, true);
 
             currentContext.popStack();
             currentContext.pushStack(isWide ? 2 : 1);
@@ -613,7 +612,6 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(MethodCall node) {
-        String methodName = node.getMethodName();
         Type targetType = node.getTarget().getInferredType();
 
         if (targetType instanceof ArrayType) {
@@ -1010,14 +1008,23 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
         // Get field
         Type targetType = node.getTarget().getInferredType();
-        String className = targetType.getName();
         String fieldName = node.getMemberName();
 
-        // Find field type
-        Type fieldType = node.getInferredType();
+        ClassDecl targetClassDecl = null;
+        if (targetType instanceof ClassType) {
+            targetClassDecl = ((ClassType) targetType).getDeclaration();
+        }
+
+        FieldInfo fieldInfo = resolveFieldInfo(fieldName, targetClassDecl);
+        if (fieldInfo == null) {
+            throw new RuntimeException("Undefined field: " + fieldName + " in class " +
+                    (targetClassDecl != null ? targetClassDecl.getName() : "<unknown>"));
+        }
+
+        Type fieldType = fieldInfo.field.getDeclaredType();
         String descriptor = getTypeDescriptor(fieldType);
 
-        emitter.emitFieldAccess(className, fieldName, descriptor, true);
+        emitter.emitFieldAccess(fieldInfo.declaringClass.getName(), fieldName, descriptor, true);
 
         // Update stack: pop reference, push field value
         currentContext.popStack();
@@ -1036,16 +1043,27 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     /**
      * Check if the given variable name is a field of the current class.
      */
-    private boolean isField(String name, ClassDecl classDecl) {
-        for (MemberDecl member : classDecl.getMembers()) {
-            if (member instanceof VariableDecl) {
-                VariableDecl field = (VariableDecl) member;
-                if (field.getName().equals(name)) {
-                    return true;
+    private FieldInfo resolveFieldInfo(String name, ClassDecl classDecl) {
+        ClassDecl current = classDecl;
+        while (current != null) {
+            for (MemberDecl member : current.getMembers()) {
+                if (member instanceof VariableDecl field && field.getName().equals(name)) {
+                    return new FieldInfo(field, current);
                 }
             }
+            current = current.getParentClass();
         }
-        return false;
+        return null;
+    }
+
+    private static class FieldInfo {
+        final VariableDecl field;
+        final ClassDecl declaringClass;
+
+        FieldInfo(VariableDecl field, ClassDecl declaringClass) {
+            this.field = field;
+            this.declaringClass = declaringClass;
+        }
     }
 
 
@@ -1152,3 +1170,4 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         return null;
     }
 }
+
