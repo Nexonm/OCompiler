@@ -1,0 +1,41 @@
+// Name: Running test, should be run to check if it's working
+// Description: Output should be 10
+// Expected result: pass
+// Expected fail stage: none
+
+class Value is
+    var value : Integer(1)
+
+    method getValue() : Integer is
+        return value
+    end
+
+    method setValue(v : Integer) is
+        value := v
+    end
+
+    this() is
+    end
+end
+
+class DoubleValue extends Value is
+
+    method getValue() : Integer is
+        return value.Mult(Integer(2))
+    end
+
+    this() is
+    end
+end
+
+class Start is
+    this() is
+    end
+
+    method start() is
+        var dv : DoubleValue()
+        dv.setValue(Integer(5))
+        var p : Printer()
+        p.print(dv.getValue())
+    end
+end
