@@ -1,0 +1,36 @@
+// Name: Just a method call
+// Description: Tests calling a method as an expression. Should pass.
+// Expected result: pass
+// Expected fail stage: none
+
+class DirectChainTest is
+
+    this() is
+    end
+
+    method run() is
+        // Should increment the counter at index 0
+        var c : Counter()
+        c.inc()
+    end
+end
+
+class Counter is
+    var value : Integer(0)
+
+    this() is
+        value := Integer(0)
+    end
+
+    method inc() is
+        value := value.Plus(Integer(1))
+    end
+
+    method dec() is
+        value := value.Minus(Integer(1))
+    end
+
+    method getValue() : Integer is
+        return value
+    end
+end

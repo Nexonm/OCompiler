@@ -1,0 +1,38 @@
+// Name: Direct Chain Test
+// Description: Tests calling a method directly on the result of another method call.
+// Expected result: pass
+// Expected fail stage: none
+
+class DirectChainTest is
+    var counters : Array[Counter](1)
+
+    this() is
+        counters.set(0, Counter())
+    end
+
+    method run() is
+        // Should increment the counter at index 0
+        var d : counters.get(0).inc()
+    end
+end
+
+class Counter is
+    var value : Integer(0)
+
+    this() is
+        value := Integer(0)
+    end
+
+    method inc() : Integer is
+        value := value.Plus(Integer(1))
+        return value
+    end
+
+    method dec() is
+        value := value.Minus(Integer(1))
+    end
+
+    method getValue() : Integer is
+        return value
+    end
+end
