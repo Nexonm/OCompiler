@@ -323,6 +323,7 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
 
         // Add parameters
         for (Parameter param : node.getParameters()) {
+            Type paramType = resolveParameterType(param.getTypeName(), param.getSpan());
             try {
                 VariableDecl paramDecl = new VariableDecl(
                         param.getName(),
@@ -330,6 +331,9 @@ public class SymbolTableBuilder implements ASTVisitor<Void> {
                         param.getSpan()
                 );
                 paramDecl.setIsParameter(true);
+                if (paramType != null) {
+                    paramDecl.setDeclaredType(paramType);
+                }
                 constructorScope.define(param.getName(), paramDecl);
             } catch (SemanticException e) {
                 errors.add(formatError("Duplicate parameter: " + param.getName(),
