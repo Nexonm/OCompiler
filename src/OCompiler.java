@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * Enhanced example usage demonstrating span-based token positioning.
  */
-public class LexerExample {
+public class OCompiler {
 
     private final static String FILE_NAME = "testTemp.o";
     private final static String DIRECTORY = "./src/tests";

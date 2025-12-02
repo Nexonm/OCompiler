@@ -31,10 +31,10 @@ javac -d out $(find src -path src/outcode -prune -o -name "*.java" -print)
 
 To run test code like testTempo.o:
 ```bash
-java -cp out LexerExample src/tests/testTempo.o
+java -cp out OCompiler src/tests/testTempo.o
 ```
 
-`LexerExample` automatically cleans `src/outcode/src` and `src/outcode/app` at the start of every run, so you always generate fresh `.j` and `.class` files without manually deleting old artifacts.
+`OCompiler` automatically cleans `src/outcode/src` and `src/outcode/app` at the start of every run, so you always generate fresh `.j` and `.class` files without manually deleting old artifacts.
 
 Whenever your program declares a `class Start` that contains:
 
