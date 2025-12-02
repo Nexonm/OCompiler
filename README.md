@@ -26,7 +26,7 @@ Simple compiler project for Compiler Construction course at Innopolis University
 │   ├── 📂 types       (Type system)
 │   └── 📂 visitors    (Semantic visitors)
 ├── 📂 tests           (Test files)
-└── 📂 tools/
+├── 📂 tools/
 │   └── ⚙️ jasmin.jar  (Jasmin bytecode assembler)
 └── 📋 OCompiler.java  (Main compiler class)
 ```
