@@ -90,9 +90,10 @@ public class ConstantFolder implements ASTVisitor<Expression> {
     @Override
     public Expression visit(VariableDecl node) {
         if (node.getInitializer() != null) {
-            Expression folded = node.getInitializer().accept(this);
-            if (folded != null && folded != node.getInitializer()) {
-                node.setInitializer(folded);
+            Expression originalInit = node.getInitializer();
+            Expression folded = originalInit.accept(this);
+            if (folded != null && folded != originalInit) {
+                node.setInitializer(preserveType(originalInit, folded));
                 changed = true;
             }
         }
@@ -109,9 +110,10 @@ public class ConstantFolder implements ASTVisitor<Expression> {
 
     @Override
     public Expression visit(Assignment node) {
-        Expression folded = node.getValue().accept(this);
-        if (folded != null && folded != node.getValue()) {
-            node.setValue(folded);
+        Expression originalValue = node.getValue();
+        Expression folded = originalValue.accept(this);
+        if (folded != null && folded != originalValue) {
+            node.setValue(preserveType(originalValue, folded));
             changed = true;
         }
         return null;
@@ -120,9 +122,10 @@ public class ConstantFolder implements ASTVisitor<Expression> {
     @Override
     public Expression visit(IfStatement node) {
         // Fold condition
-        Expression foldedCond = node.getCondition().accept(this);
-        if (foldedCond != null && foldedCond != node.getCondition()) {
-            node.setCondition(foldedCond);
+        Expression originalCond = node.getCondition();
+        Expression foldedCond = originalCond.accept(this);
+        if (foldedCond != null && foldedCond != originalCond) {
+            node.setCondition(preserveType(originalCond, foldedCond));
             changed = true;
         }
 
@@ -141,9 +144,10 @@ public class ConstantFolder implements ASTVisitor<Expression> {
     @Override
     public Expression visit(WhileLoop node) {
         // Fold condition
-        Expression foldedCond = node.getCondition().accept(this);
-        if (foldedCond != null && foldedCond != node.getCondition()) {
-            node.setCondition(foldedCond);
+        Expression originalCond = node.getCondition();
+        Expression foldedCond = originalCond.accept(this);
+        if (foldedCond != null && foldedCond != originalCond) {
+            node.setCondition(preserveType(originalCond, foldedCond));
             changed = true;
         }
 
@@ -157,9 +161,10 @@ public class ConstantFolder implements ASTVisitor<Expression> {
     @Override
     public Expression visit(ReturnStatement node) {
         if (node.getValue().isPresent()) {
-            Expression folded = node.getValue().get().accept(this);
-            if (folded != null && folded != node.getValue().get()) {
-                node.setValue(folded);
+            Expression originalValue = node.getValue().get();
+            Expression folded = originalValue.accept(this);
+            if (folded != null && folded != originalValue) {
+                node.setValue(preserveType(originalValue, folded));
                 changed = true;
             }
         }
@@ -186,9 +191,10 @@ public class ConstantFolder implements ASTVisitor<Expression> {
     @Override
     public Expression visit(MethodCall node) {
         // First, recursively fold target and arguments
-        Expression foldedTarget = node.getTarget().accept(this);
-        if (foldedTarget != null && foldedTarget != node.getTarget()) {
-            node.setTarget(foldedTarget);
+        Expression originalTarget = node.getTarget();
+        Expression foldedTarget = originalTarget.accept(this);
+        if (foldedTarget != null && foldedTarget != originalTarget) {
+            node.setTarget(preserveType(originalTarget, foldedTarget));
             changed = true;
         }
 
@@ -196,7 +202,7 @@ public class ConstantFolder implements ASTVisitor<Expression> {
             Expression arg = node.getArguments().get(i);
             Expression foldedArg = arg.accept(this);
             if (foldedArg != null && foldedArg != arg) {
-                node.getArguments().set(i, foldedArg);
+                node.getArguments().set(i, preserveType(arg, foldedArg));
                 changed = true;
             }
         }
@@ -206,7 +212,7 @@ public class ConstantFolder implements ASTVisitor<Expression> {
         if (folded != null) {
             expressionsFolded++;
             changed = true;
-            return folded;
+            return preserveType(node, folded);
         }
 
         return node;
@@ -428,7 +434,7 @@ public class ConstantFolder implements ASTVisitor<Expression> {
             Expression arg = node.getArguments().get(i);
             Expression folded = arg.accept(this);
             if (folded != null && folded != arg) {
-                node.getArguments().set(i, folded);
+                node.getArguments().set(i, preserveType(arg, folded));
                 changed = true;
             }
         }
@@ -454,15 +460,30 @@ public class ConstantFolder implements ASTVisitor<Expression> {
 
                         expressionsFolded++;
                         changed = true;
-                        return new ConstructorCall(node.getClassName(),
+                        return preserveType(node, new ConstructorCall(node.getClassName(),
                                 List.of(innerArg),
-                                node.getSpan());
+                                node.getSpan()));
                     }
                 }
             }
         }
 
         return node;
+    }
+
+    /**
+     * Copy inferred type metadata from the original expression onto the replacement.
+     */
+    private Expression preserveType(Expression original, Expression replacement) {
+        if (original == null || replacement == null) {
+            return replacement;
+        }
+
+        if (original.getInferredType() != null) {
+            replacement.setInferredType(original.getInferredType());
+        }
+
+        return replacement;
     }
 
     @Override

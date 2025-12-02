@@ -278,8 +278,12 @@ public class InstructionEmitter {
      */
     public void emitPushInt(int value) {
         if (value >= -1 && value <= 5) {
-            // Use iconst_N for -1 to 5
-            emit("iconst_" + value);
+            // Use iconst_N for -1 to 5 (`iconst_m1` for -1)
+            if (value == -1) {
+                emit("iconst_m1");
+            } else {
+                emit("iconst_" + value);
+            }
         } else if (value >= -128 && value <= 127) {
             // Use bipush for byte range
             emit("bipush " + value);

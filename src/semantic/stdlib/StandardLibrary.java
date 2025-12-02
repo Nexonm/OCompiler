@@ -103,6 +103,10 @@ public class StandardLibrary {
         register("Printer", "print", List.of(intType), voidType);
         register("Printer", "print", List.of(boolType), voidType);
         register("Printer", "print", List.of(realType), voidType);
+
+        register("Printer", "println", List.of(intType), voidType);
+        register("Printer", "println", List.of(boolType), voidType);
+        register("Printer", "println", List.of(realType), voidType);
     }
 
     /**

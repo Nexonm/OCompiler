@@ -404,9 +404,10 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         
         Type type = node.getExpression().getInferredType();
         if (type != null && !(type instanceof VoidType)) {
-            // Expression statement result is unused, pop it off the stack
-            int slots = isWideType(type) ? 2 : 1;
-            currentContext.popStack(slots);
+            // Drop unused expression result so JVM stack stays balanced
+            boolean wide = isWideType(type);
+            emitter.emit(wide ? "pop2" : "pop");
+            currentContext.popStack(wide ? 2 : 1);
         }
         
         return null;
@@ -875,6 +876,16 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     }
 
     private void generatePrinterMethodCall(MethodCall node) {
+        String methodName = node.getMethodName();
+        boolean newline;
+        if (methodName.equals("print")) {
+            newline = false;
+        } else if (methodName.equals("println")) {
+            newline = true;
+        } else {
+            throw new RuntimeException("Unknown Printer method: " + methodName);
+        }
+
         // Get System.out on the stack
         emitter.emit("getstatic java/lang/System/out Ljava/io/PrintStream;");
         currentContext.pushStack();
@@ -895,8 +906,9 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
                     descriptor = "(Ljava/lang/Object;)V";
         }
 
-        // Invoke println
-        emitter.emitInvoke("java/io/PrintStream", "println", descriptor, "virtual");
+        // Invoke print / println
+        String jvmMethod = newline ? "println" : "print";
+        emitter.emitInvoke("java/io/PrintStream", jvmMethod, descriptor, "virtual");
         int argSlots = isWideType(argType) ? 2 : 1;
         currentContext.popStack(1 + argSlots); // System.out + argument
     }

@@ -1,0 +1,257 @@
+// Name: Sudoku Solver
+// Description: Solves a 9x9 Sudoku puzzle using backtracking.
+
+class Sudoku is
+    var grid : Array[Integer](81)  // 9x9 grid as flat array
+    var p : Printer()
+
+    // Constructor: initialize empty grid
+    this() is
+        var i : Integer(0)
+        while i.Less(Integer(81)) loop
+            grid.set(i, Integer(0))
+            i := i.Plus(Integer(1))
+        end
+    end
+
+    // Set value at row, col
+    method set(row : Integer, col : Integer, val : Integer) is
+        var index : Integer(0)
+        index := row.Mult(Integer(9)).Plus(col)
+        grid.set(index, val)
+    end
+
+    // Get value at row, col
+    method get(row : Integer, col : Integer) : Integer is
+        var index : Integer(0)
+        index := row.Mult(Integer(9)).Plus(col)
+        return grid.get(index)
+    end
+
+    // Print grid
+    method printGrid() is
+        var row : Integer(0)
+        while row.Less(Integer(9)) loop
+            var col : Integer(0)
+            while col.Less(Integer(8)) loop
+                var val : Integer(0)
+                val := this.get(row, col)
+                p.print(val)
+                col := col.Plus(Integer(1))
+            end
+            var val2 : Integer(0)
+            val2 := this.get(row, col)
+            p.println(val2)
+            col := col.Plus(Integer(1))
+            row := row.Plus(Integer(1))
+        end
+    end
+
+    // Check if placing num at (row, col) is safe
+    method isSafe(row : Integer, col : Integer, num : Integer) : Boolean is
+        // Check row
+        var c : Integer(0)
+        while c.Less(Integer(9)) loop
+            var val : Integer(0)
+            val := this.get(row, c)
+            if val.Equal(num) then
+                return Boolean(false)
+            else
+            end
+            c := c.Plus(Integer(1))
+        end
+
+        // Check column
+        var r : Integer(0)
+        while r.Less(Integer(9)) loop
+            var val2 : Integer(0)
+            val2 := this.get(r, col)
+            if val2.Equal(num) then
+                return Boolean(false)
+            else
+            end
+            r := r.Plus(Integer(1))
+        end
+
+        // Check 3x3 box
+        var boxRow : Integer(0)
+        boxRow := row.Div(Integer(3)).Mult(Integer(3))
+        var boxCol : Integer(0)
+        boxCol := col.Div(Integer(3)).Mult(Integer(3))
+
+        var i : Integer(0)
+        while i.Less(Integer(3)) loop
+            var j : Integer(0)
+            while j.Less(Integer(3)) loop
+                var checkRow : Integer(0)
+                checkRow := boxRow.Plus(i)
+                var checkCol : Integer(0)
+                checkCol := boxCol.Plus(j)
+                var val : Integer(0)
+                val := this.get(checkRow, checkCol)
+                if val.Equal(num) then
+                    return Boolean(false)
+                else
+                end
+                j := j.Plus(Integer(1))
+            end
+            i := i.Plus(Integer(1))
+        end
+
+        return Boolean(true)
+    end
+
+    // Find empty cell (returns -1 if none found)
+    method findEmpty() : Integer is
+        var row : Integer(0)
+        while row.Less(Integer(9)) loop
+            var col : Integer(0)
+            while col.Less(Integer(9)) loop
+                var val : Integer(0)
+                val := this.get(row, col)
+                if val.Equal(Integer(0)) then
+                    // Return row * 9 + col
+                    return row.Mult(Integer(9)).Plus(col)
+                else
+                end
+                col := col.Plus(Integer(1))
+            end
+            row := row.Plus(Integer(1))
+        end
+        return Integer(0).Minus(Integer(1))  // Return -1
+    end
+
+    // Solve using backtracking
+    method solve() : Boolean is
+        var emptyPos : Integer(0)
+        emptyPos := this.findEmpty()
+
+        // No empty cells = solved
+        if emptyPos.Less(Integer(0)) then
+            return Boolean(true)
+        else
+        end
+
+        // Extract row and col from position
+        var row : Integer(0)
+        row := emptyPos.Div(Integer(9))
+        var col : Integer(0)
+        col := emptyPos.Rem(Integer(9))
+
+        // Try numbers 1-9
+        var num : Integer(1)
+        while num.LessEqual(Integer(9)) loop
+            if this.isSafe(row, col, num) then
+                // Place number
+                this.set(row, col, num)
+
+                // Recursively solve
+                if this.solve() then
+                    return Boolean(true)
+                else
+                end
+
+                // Backtrack
+                this.set(row, col, Integer(0))
+            else
+            end
+
+            num := num.Plus(Integer(1))
+        end
+
+        return Boolean(false)
+    end
+end
+
+class Start is
+    method start() is
+        var s : Sudoku()
+
+        // Initial Puzzle Layout:
+        // -----------------------
+        // - 8 5 | - - - | - - 1
+        // 1 7 - | - 6 4 | 8 - -
+        // - - 9 | 1 - - | 3 7 2
+        // -----------------------
+        // 6 2 1 | - 5 - | 7 3 -
+        // 8 - - | 7 - - | 1 6 9
+        // - - 7 | 6 1 - | - - -
+        // -----------------------
+        // - 1 - | - - 9 | 5 - 7
+        // 7 - - | - 2 6 | - 1 3
+        // - 3 4 | 8 - 1 | - - -
+        // -----------------------
+
+        // Set up a sample puzzle (0 = empty)
+        // Easy puzzle example
+        // Row 0
+        s.set(Integer(0), Integer(1), Integer(8))
+        s.set(Integer(0), Integer(2), Integer(5))
+        s.set(Integer(0), Integer(8), Integer(1))
+
+        // Row 1
+        s.set(Integer(1), Integer(0), Integer(1))
+        s.set(Integer(1), Integer(1), Integer(7))
+        s.set(Integer(1), Integer(4), Integer(6))
+        s.set(Integer(1), Integer(5), Integer(4))
+        s.set(Integer(1), Integer(6), Integer(8))
+
+        // Row 2
+        s.set(Integer(2), Integer(2), Integer(9))
+        s.set(Integer(2), Integer(3), Integer(1))
+        s.set(Integer(2), Integer(6), Integer(3))
+        s.set(Integer(2), Integer(7), Integer(7))
+        s.set(Integer(2), Integer(8), Integer(2))
+
+        // Row 3
+        s.set(Integer(3), Integer(0), Integer(6))
+        s.set(Integer(3), Integer(1), Integer(2))
+        s.set(Integer(3), Integer(2), Integer(1))
+        s.set(Integer(3), Integer(4), Integer(5))
+        s.set(Integer(3), Integer(6), Integer(7))
+        s.set(Integer(3), Integer(7), Integer(3))
+
+        // Row 4
+        s.set(Integer(4), Integer(0), Integer(8))
+        s.set(Integer(4), Integer(3), Integer(7))
+        s.set(Integer(4), Integer(6), Integer(1))
+        s.set(Integer(4), Integer(7), Integer(6))
+        s.set(Integer(4), Integer(8), Integer(9))
+
+        // Row 5
+        s.set(Integer(5), Integer(2), Integer(7))
+        s.set(Integer(5), Integer(3), Integer(6))
+        s.set(Integer(5), Integer(4), Integer(1))
+
+        // Row 6
+        s.set(Integer(6), Integer(1), Integer(1))
+        s.set(Integer(6), Integer(5), Integer(9))
+        s.set(Integer(6), Integer(6), Integer(5))
+        s.set(Integer(6), Integer(8), Integer(7))
+
+        // Row 7
+        s.set(Integer(7), Integer(0), Integer(7))
+        s.set(Integer(7), Integer(4), Integer(2))
+        s.set(Integer(7), Integer(5), Integer(6))
+        s.set(Integer(7), Integer(7), Integer(1))
+        s.set(Integer(7), Integer(8), Integer(3))
+
+        // Row 8
+        s.set(Integer(8), Integer(1), Integer(3))
+        s.set(Integer(8), Integer(2), Integer(4))
+        s.set(Integer(8), Integer(3), Integer(8))
+        s.set(Integer(8), Integer(5), Integer(1))
+
+        var pr : Printer()
+
+        // Solve and print
+        if s.solve() then
+            s.printGrid()
+        else
+            pr.println(Integer(0))
+        end
+    end
+
+    this() is
+    end
+end
