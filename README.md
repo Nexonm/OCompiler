@@ -1,6 +1,36 @@
 # OCompiler
 Simple compiler project for Compiler Construction course at Innopolis University Fall 2025
 
+## Project structure
+
+```txt
+📦 src/
+├── 📂 autotest        (Test automation java files)
+├── 📂 codegen         (Code generation for Jasmin)
+├── 📂 lexer           (Lexical analysis)
+├── 📂 outcode/
+│   ├── 📂 app         (Application logic)
+│   └── 📂 src         (Output source files)
+├── 📂 parser/
+│   └── 📂 ast/
+│       ├── 📂 declarations
+│       ├── 📂 expressions
+│       ├── 📂 statements
+│       ├── 📋 ASTNode.java     (Abstract base class)
+│       ├── 📋 ASTVisitor.java  (Visitor pattern interface)
+│       └── 📋 Parser.java      (Main parser class)
+├── 📂 semantic/
+│   ├── 📂 scope       (Scope management)
+│   ├── 📂 semantic    (Semantic analysis)
+│   ├── 📂 stdlib      (Standard library)
+│   ├── 📂 types       (Type system)
+│   └── 📂 visitors    (Semantic visitors)
+├── 📂 tests           (Test files)
+└── 📂 tools/
+│   └── ⚙️ jasmin.jar  (Jasmin bytecode assembler)
+└── 📋 OCompiler.java  (Main compiler class)
+```
+
 ## Compilation
 
 ```txt
