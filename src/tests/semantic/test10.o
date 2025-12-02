@@ -10,17 +10,21 @@ class PrintTest is
         // Test integer printing
         var i : Integer(42)
         p.print(i)
+        p.println(i)
 
         // Test real printing
         var r : Real(3.14)
         p.print(r)
+        p.println(r)
 
         // Test boolean printing
         var b : Boolean(true)
         p.print(b)
+        p.println(b)
         
         var b2 : Boolean(false)
         p.print(b2)
+        p.println(b2)
     end
 
     this() is
