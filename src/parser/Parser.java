@@ -395,13 +395,16 @@ public class Parser {
         }
         if (check(TokenType.IDENTIFIER)) {
             int saved = current;
-            Token id = advance();
+            advance();
             if (check(TokenType.ASSIGNMENT)) {
                 current = saved;
                 return parseAssignment();
             }
-            // Restore and parse as expression statement
             current = saved;
+            Expression expr = parseExpression();
+            return new ExpressionStatement(expr, expr.getSpan());
+        }
+        if (startsExpression()) {
             Expression expr = parseExpression();
             return new ExpressionStatement(expr, expr.getSpan());
         }
@@ -593,7 +596,7 @@ public class Parser {
                     // This should not happen in primary context (methods need a receiver)
                     error("Method call '" + name + "' requires a receiver (use 'this." + name + "(...)')");
                     advance(); // consume '('
-                    List<Expression> args = parseArguments(true, name);
+                    parseArguments(true, name);
                     Token rparen = consume(TokenType.RPAREN, "Expected ')'");
                     Span span = startSpan.merge(rparen.span());
                     // Return as identifier expression for error recovery
@@ -605,6 +608,14 @@ public class Parser {
         }
         error("Expected expression");
         return new UnknownExpression(peek().span());
+    }
+
+    private boolean startsExpression() {
+        return check(TokenType.INTEGER_LITERAL) ||
+                check(TokenType.REAL_LITERAL) ||
+                check(TokenType.TRUE) ||
+                check(TokenType.FALSE) ||
+                check(TokenType.THIS);
     }
 
     private Expression parseArgument(boolean isMethodCall, String methodName) {

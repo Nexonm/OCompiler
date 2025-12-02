@@ -404,9 +404,10 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         
         Type type = node.getExpression().getInferredType();
         if (type != null && !(type instanceof VoidType)) {
-            // Expression statement result is unused, pop it off the stack
-            int slots = isWideType(type) ? 2 : 1;
-            currentContext.popStack(slots);
+            // Drop unused expression result so JVM stack stays balanced
+            boolean wide = isWideType(type);
+            emitter.emit(wide ? "pop2" : "pop");
+            currentContext.popStack(wide ? 2 : 1);
         }
         
         return null;
