@@ -1,5 +1,0 @@
-// Minimal Single Class
-class SimpleClass is
-    this() is
-    end
-end

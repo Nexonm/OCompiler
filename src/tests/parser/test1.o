@@ -1,0 +1,15 @@
+// Name: Test invalid parser
+// Description: b.Plus(2) is forbidden, should be b.Plus(Integer(2))
+// Expected result: fail
+// Expected fail stage: parser
+class Calculator is
+    var result : Integer(0)
+
+    method add(a : Integer, b : Integer) : Integer is
+        var test : b.Plus(2)
+        return a.Plus(b)
+    end
+
+    this() is
+    end
+end

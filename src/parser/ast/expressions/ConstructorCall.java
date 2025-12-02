@@ -4,6 +4,7 @@ import lexer.Span;
 import parser.ast.ASTNode;
 import parser.ast.ASTVisitor;
 import parser.ast.declarations.ClassDecl;
+import semantic.types.Type;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +27,7 @@ public class ConstructorCall extends Expression {
     private final List<Expression> arguments;
 
     private ClassDecl resolvedClass = null;
+    private Type resolvedType = null;
 
     /**
      * Creates a constructor call node.
@@ -82,6 +84,14 @@ public class ConstructorCall extends Expression {
 
     public void setResolvedClass(ClassDecl resolvedClass) {
         this.resolvedClass = resolvedClass;
+    }
+
+    public Type getResolvedType() {
+        return resolvedType;
+    }
+
+    public void setResolvedType(Type resolvedType) {
+        this.resolvedType = resolvedType;
     }
 
     @Override

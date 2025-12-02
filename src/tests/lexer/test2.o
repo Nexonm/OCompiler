@@ -1,0 +1,19 @@
+// Name: Test Real object creation
+// Description: Valid Real Creation
+// Expected result: pass
+// Expected fail stage: none
+class Calculator is
+    var result : Integer(0)
+
+    method add(a : Integer, b : Integer) : Integer is
+        var test : Real(4.32)
+        return a.Plus(b)
+    end
+
+    method getValue() : Integer is
+        return result
+    end
+
+    this() is
+    end
+end

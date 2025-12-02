@@ -167,6 +167,16 @@ public class ConstantFolder implements ASTVisitor<Expression> {
     }
 
     @Override
+    public Expression visit(ExpressionStatement node) {
+        Expression folded = node.getExpression().accept(this);
+        if (folded != null && folded != node.getExpression()) {
+            // ExpressionStatements usually wrap method calls, which we might fold
+            // But ExpressionStatement holds the expression as final.
+        }
+        return null;
+    }
+
+    @Override
     public Expression visit(UnknownStatement node) {
         return null;
     }

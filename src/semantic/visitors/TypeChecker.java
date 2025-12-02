@@ -9,6 +9,7 @@ import semantic.scope.GlobalScope;
 import semantic.semantic.SemanticException;
 import semantic.stdlib.BuiltInMethod;
 import semantic.stdlib.StandardLibrary;
+import semantic.types.ArrayType;
 import semantic.types.BuiltInTypes;
 import semantic.types.ClassType;
 import semantic.types.Type;
@@ -76,6 +77,12 @@ public class TypeChecker implements ASTVisitor<Type> {
 
     @Override
     public Type visit(Program node) {
+        // PASS 0: resolve all class member signatures so cross-class references see types
+        for (ClassDecl classDecl : node.getClasses()) {
+            resolveClassMemberSignatures(classDecl);
+        }
+
+        // PASS 1: type check bodies now that signatures are known
         for (ClassDecl classDecl : node.getClasses()) {
             classDecl.accept(this);
         }
@@ -86,18 +93,7 @@ public class TypeChecker implements ASTVisitor<Type> {
     public Type visit(ClassDecl node) {
         currentClass = node;
 
-        // PASS 1: Resolve all method signatures (return types + parameter types)
-        for (MemberDecl member : node.getMembers()) {
-            if (member instanceof MethodDecl) {
-                MethodDecl method = (MethodDecl) member;
-                resolveMethodSignature(method);
-            } else if (member instanceof ConstructorDecl) {
-                ConstructorDecl ctor = (ConstructorDecl) member;
-                resolveConstructorSignature(ctor);
-            }
-        }
-
-        // PASS 2: Type check all member bodies
+        // Only type check member bodies; signatures were resolved globally
         for (MemberDecl member : node.getMembers()) {
             member.accept(this);
         }
@@ -156,6 +152,11 @@ public class TypeChecker implements ASTVisitor<Type> {
     public Type visit(VariableDeclStatement node) {
         node.getVariableDecl().accept(this);
         return null;
+    }
+
+    @Override
+    public Type visit(ExpressionStatement node) {
+        return node.getExpression().accept(this);
     }
 
     @Override
@@ -338,6 +339,23 @@ public class TypeChecker implements ASTVisitor<Type> {
      * Validate built-in type constructor calls.
      */
     private void validateBuiltInConstructor(String className, List<Type> argTypes, Span span) {
+        if (className.startsWith("Array[")) {
+             // Array constructor expects 1 argument (Integer size)
+             if (argTypes.size() != 1) {
+                    errors.add(formatError(
+                            "Array constructor expects 1 argument (size), got " + argTypes.size(),
+                            span
+                    ));
+             } else if (argTypes.get(0) != null &&
+                        !argTypes.get(0).equals(BuiltInTypes.INTEGER)) {
+                 errors.add(formatError(
+                            "Array constructor size must be Integer",
+                            span
+                 ));
+             }
+             return;
+        }
+
         // Built-in types expect specific argument types
         switch (className) {
             case "Integer":
@@ -458,6 +476,14 @@ public class TypeChecker implements ASTVisitor<Type> {
 
     @Override
     public Type visit(MethodCall node) {
+        // Explicit restriction on literals
+        if (node.getTarget() instanceof IntegerLiteral ||
+                node.getTarget() instanceof RealLiteral ||
+                node.getTarget() instanceof BooleanLiteral) {
+            errors.add(formatError("Cannot call method on literal directly", node.getTarget().getSpan()));
+            return null;
+        }
+
         // Get target type
         Type targetType = node.getTarget().accept(this);
 
@@ -475,6 +501,11 @@ public class TypeChecker implements ASTVisitor<Type> {
             Type argType = arg.accept(this);
             argTypes.add(argType);
         }
+
+        if (targetType instanceof ArrayType) {
+            return handleArrayMethodCall(node, (ArrayType) targetType, argTypes);
+        }
+
         // Check if this is a built-in type
         if (StandardLibrary.isBuiltInType(targetType.getName())) {
             return handleBuiltInMethodCall(node, targetType, argTypes);
@@ -509,6 +540,82 @@ public class TypeChecker implements ASTVisitor<Type> {
         node.setInferredType(returnType);
 
         return returnType;
+    }
+
+    /**
+     * Handle method calls on array types.
+     */
+    private Type handleArrayMethodCall(MethodCall node, ArrayType arrayType,
+                                       List<Type> argTypes) {
+        String methodName = node.getMethodName();
+        Type elementType = arrayType.getElementType();
+
+        switch (methodName) {
+            case "get": {
+                if (argTypes.size() != 1) {
+                    errors.add(formatError(
+                            "Array.get expects 1 argument, got " + argTypes.size(),
+                            node.getSpan()
+                    ));
+                    return null;
+                }
+                Type indexType = argTypes.get(0);
+                if (indexType != null && !indexType.equals(BuiltInTypes.INTEGER)) {
+                    errors.add(formatError(
+                            "Array.get index must be Integer",
+                            node.getArguments().get(0).getSpan()
+                    ));
+                    return null;
+                }
+                node.setInferredType(elementType);
+                return elementType;
+            }
+            case "set": {
+                if (argTypes.size() != 2) {
+                    errors.add(formatError(
+                            "Array.set expects 2 arguments, got " + argTypes.size(),
+                            node.getSpan()
+                    ));
+                    return null;
+                }
+                Type indexType = argTypes.get(0);
+                if (indexType != null && !indexType.equals(BuiltInTypes.INTEGER)) {
+                    errors.add(formatError(
+                            "Array.set index must be Integer",
+                            node.getArguments().get(0).getSpan()
+                    ));
+                    return null;
+                }
+                Type valueType = argTypes.get(1);
+                if (valueType != null && !valueType.isCompatibleWith(elementType)) {
+                    errors.add(formatError(
+                            String.format("Array.set value type mismatch: expected %s, got %s",
+                                    elementType.getName(), valueType.getName()),
+                            node.getArguments().get(1).getSpan()
+                    ));
+                    return null;
+                }
+                node.setInferredType(VoidType.INSTANCE);
+                return VoidType.INSTANCE;
+            }
+            case "Length": {
+                if (!argTypes.isEmpty()) {
+                    errors.add(formatError(
+                            "Array.Length expects 0 arguments",
+                            node.getSpan()
+                    ));
+                    return null;
+                }
+                node.setInferredType(BuiltInTypes.INTEGER);
+                return BuiltInTypes.INTEGER;
+            }
+            default:
+                errors.add(formatError(
+                        "Unknown array method: " + methodName,
+                        node.getSpan()
+                ));
+                return null;
+        }
     }
 
     /**
@@ -638,6 +745,16 @@ public class TypeChecker implements ASTVisitor<Type> {
      * Resolve type name to Type object.
      */
     private Type resolveTypeName(String typeName, Span span) {
+        // Handle Array types
+        if (typeName.startsWith("Array[") && typeName.endsWith("]")) {
+            String innerName = typeName.substring(6, typeName.length() - 1);
+            Type innerType = resolveTypeName(innerName, span);
+            if (innerType != null) {
+                return new ArrayType(innerType);
+            }
+            return null;
+        }
+
         // Check built-in types
         Type builtIn = BuiltInTypes.getBuiltInType(typeName);
         if (builtIn != null) {
@@ -740,6 +857,19 @@ public class TypeChecker implements ASTVisitor<Type> {
         for (Parameter param : ctor.getParameters()) {
             Type paramType = resolveTypeName(param.getTypeName(), param.getSpan());
             param.setResolvedType(paramType);
+        }
+    }
+
+    /**
+     * Resolve all method and constructor signatures declared within a class.
+     */
+    private void resolveClassMemberSignatures(ClassDecl classDecl) {
+        for (MemberDecl member : classDecl.getMembers()) {
+            if (member instanceof MethodDecl) {
+                resolveMethodSignature((MethodDecl) member);
+            } else if (member instanceof ConstructorDecl) {
+                resolveConstructorSignature((ConstructorDecl) member);
+            }
         }
     }
 

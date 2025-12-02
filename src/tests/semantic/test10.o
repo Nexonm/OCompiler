@@ -1,0 +1,30 @@
+// Name: Print Test
+// Description: Tests the Printer class for various types.
+// Expected result: pass
+// Expected fail stage: none
+
+class PrintTest is
+    method run() is
+        var p : Printer()
+
+        // Test integer printing
+        var i : Integer(42)
+        p.print(i)
+
+        // Test real printing
+        var r : Real(3.14)
+        p.print(r)
+
+        // Test boolean printing
+        var b : Boolean(true)
+        p.print(b)
+        
+        var b2 : Boolean(false)
+        p.print(b2)
+    end
+
+    this() is
+    end
+end
+
+

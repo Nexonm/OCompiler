@@ -1,0 +1,15 @@
+// Name: Test unknown variable catch
+// Description: unknown variable k is expected to catch
+// Expected result: fail
+// Expected fail stage: semantic
+class Calculator is
+    var result : Integer(0)
+
+    method add(a : Integer, b : Integer) : Integer is
+        var test : k.Plus(Integer(2))
+        return a.Plus(b)
+    end
+
+    this() is
+    end
+end

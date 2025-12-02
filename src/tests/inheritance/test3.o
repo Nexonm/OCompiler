@@ -1,0 +1,20 @@
+// Name: Multilevel Inheritance (grand -> parent -> child)
+// Description: Child inherits from Grandparent through Parent.
+// Expected result: pass
+// Expected fail stage: none
+
+class GrandParent is
+    var familyName : Integer(100)
+    this() is end
+end
+
+class Parent extends GrandParent is
+    this() is end
+end
+
+class Child extends Parent is
+    method getFamilyName() : Integer is
+        return familyName // Inherited from GrandParent
+    end
+    this() is end
+end

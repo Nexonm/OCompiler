@@ -232,9 +232,30 @@ public class Parser {
         return new VariableDecl(nameToken.lexeme(), initializer, span);
     }
 
+
+    /**
+     * Parses a type name, potentially with generic parameters.
+     * Grammar: Type → Identifier [ '[' Identifier ']' ]
+     * Example: Integer, Array[Integer]
+     */
+    private String parseType() {
+        Token typeToken = consume(TokenType.IDENTIFIER, "Expected type name");
+        StringBuilder typeName = new StringBuilder(typeToken.lexeme());
+        
+        if (match(TokenType.LBRACKET)) {
+            typeName.append("[");
+            Token innerType = consume(TokenType.IDENTIFIER, "Expected generic type parameter");
+            typeName.append(innerType.lexeme());
+            consume(TokenType.RBRACKET, "Expected ']'");
+            typeName.append("]");
+        }
+        
+        return typeName.toString();
+    }
+
     /**
      * Parses a method declaration (NEW in Phase 3).
-     * Grammar: MethodDeclaration → method Identifier [ Parameters ] [ : Identifier ] [ MethodBody ]
+     * Grammar: MethodDeclaration → method Identifier [ Parameters ] [ : Type ] [ MethodBody ]
      *
      * Examples:
      * - method foo()
@@ -254,8 +275,7 @@ public class Parser {
         // Parse return type (optional)
         String returnTypeName = null;
         if (match(TokenType.COLON)) {
-            Token typeToken = consume(TokenType.IDENTIFIER, "Expected return type name");
-            returnTypeName = typeToken.lexeme();
+            returnTypeName = parseType();
         }
         // Parse body (optional - forward declaration if missing)
         List<Statement> body = null;
@@ -326,17 +346,17 @@ public class Parser {
 
     /**
      * Parses a single parameter
-     * Grammar: Parameter → Identifier : Identifier
+     * Grammar: Parameter → Identifier : Type
      *
      * Example: count : Integer
      */
     private Parameter parseParameter() {
         Token nameToken = consume(TokenType.IDENTIFIER, "Expected parameter name");
         consume(TokenType.COLON, "Expected ':' after parameter name");
-        Token typeToken = consume(TokenType.IDENTIFIER, "Expected parameter type");
+        String typeName = parseType();
 
-        Span span = nameToken.span().merge(typeToken.span());
-        return new Parameter(nameToken.lexeme(), typeToken.lexeme(), span);
+        Span span = nameToken.span().merge(previous().span());
+        return new Parameter(nameToken.lexeme(), typeName, span);
     }
 
     /**
@@ -380,9 +400,12 @@ public class Parser {
                 current = saved;
                 return parseAssignment();
             }
+            // Restore and parse as expression statement
             current = saved;
+            Expression expr = parseExpression();
+            return new ExpressionStatement(expr, expr.getSpan());
         }
-        error("Expected statement (var, return, if, while, or assignment), found (" + peek().lexeme() + ")");
+        error("Expected statement (var, return, if, while, assignment or expression), found (" + peek().lexeme() + ")");
         advance();
         return new UnknownStatement(null, previous().span());
     }
@@ -490,7 +513,7 @@ public class Parser {
             Token nameToken = consume(TokenType.IDENTIFIER, "Expected member or method name");
             String name = nameToken.lexeme();
             if (match(TokenType.LPAREN)) {
-                List<Expression> args = parseArguments();
+                List<Expression> args = parseArguments(true, name);
                 Token rparen = consume(TokenType.RPAREN, "Expected ')'");
                 Span span = expr.getSpan().merge(rparen.span());
                 expr = new MethodCall(expr, name, args, span);
@@ -540,32 +563,57 @@ public class Parser {
         }
         if (check(TokenType.IDENTIFIER)) {
             Token token = advance();
-            String name = token.lexeme();
+            StringBuilder nameBuilder = new StringBuilder(token.lexeme());
+            Span startSpan = token.span();
+            
+            // Check for generic type parameters: Array[Integer]
+            if (match(TokenType.LBRACKET)) {
+                nameBuilder.append("[");
+                Token innerType = consume(TokenType.IDENTIFIER, "Expected generic type parameter");
+                nameBuilder.append(innerType.lexeme());
+                consume(TokenType.RBRACKET, "Expected ']'");
+                nameBuilder.append("]");
+            }
+            
+            String name = nameBuilder.toString();
+            
             if (check(TokenType.LPAREN)) {
                 // add(...) - method, Add(...) - constructor. Methods start with lowercase
-                if (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
+                // Array is special case - starts with uppercase but we handle it as constructor
+                boolean isConstructor = !name.isEmpty() && Character.isUpperCase(name.charAt(0));
+                
+                if (isConstructor) {
                     advance(); // consume '('
-                    List<Expression> args = parseArguments();
+                    List<Expression> args = parseArguments(false, name);
                     Token rparen = consume(TokenType.RPAREN, "Expected ')'");
-                    Span span = token.span().merge(rparen.span());
+                    Span span = startSpan.merge(rparen.span());
                     return new ConstructorCall(name, args, span);
                 } else {
                     // Sugar for better error handling
                     // This should not happen in primary context (methods need a receiver)
                     error("Method call '" + name + "' requires a receiver (use 'this." + name + "(...)')");
                     advance(); // consume '('
-                    List<Expression> args = parseArguments();
+                    List<Expression> args = parseArguments(true, name);
                     Token rparen = consume(TokenType.RPAREN, "Expected ')'");
-                    Span span = token.span().merge(rparen.span());
+                    Span span = startSpan.merge(rparen.span());
                     // Return as identifier expression for error recovery
                     return new IdentifierExpr(name, span);
                 }
             }
 
-            return new IdentifierExpr(name, token.span());
+            return new IdentifierExpr(name, startSpan);
         }
         error("Expected expression");
         return new UnknownExpression(peek().span());
+    }
+
+    private Expression parseArgument(boolean isMethodCall, String methodName) {
+        Expression arg = parseExpression();
+        boolean isArrayMethod = "set".equals(methodName) || "get".equals(methodName);
+        if (isMethodCall && !isArrayMethod && (arg instanceof IntegerLiteral || arg instanceof RealLiteral || arg instanceof BooleanLiteral)) {
+            error("Raw literals are not allowed as arguments to method calls. Use a constructor call, e.g., Integer(2).");
+        }
+        return arg;
     }
 
     /**
@@ -574,14 +622,14 @@ public class Parser {
      *
      * Note: Call this AFTER consuming the opening '('
      */
-    private List<Expression> parseArguments() {
+    private List<Expression> parseArguments(boolean isMethodCall, String methodName) {
         List<Expression> args = new ArrayList<>();
         if (check(TokenType.RPAREN)) {
             return args;
         }
-        args.add(parseExpression());
+        args.add(parseArgument(isMethodCall, methodName));
         while (match(TokenType.COMMA)) {
-            args.add(parseExpression());
+            args.add(parseArgument(isMethodCall, methodName));
         }
         return args;
     }

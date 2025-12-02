@@ -1,0 +1,15 @@
+// Name: Test invalid syntax
+// Description: 5.Plus(...) is forbidden, we cannot call methods on literals
+// Expected result: fail
+// Expected fail stage: lexer
+class Calculator is
+    var result : Integer(0)
+
+    method add(a : Integer, b : Integer) : Integer is
+        var test : 5.Plus(Integer(2))
+        return a.Plus(b)
+    end
+
+    this() is
+    end
+end

@@ -162,6 +162,12 @@ public class ClassDecl extends ASTNode implements Scope {
         }
         String sig = method.getSignature();
         if (methodTable.containsKey(sig)) {
+            MethodDecl existing = methodTable.get(sig);
+            if (existing.isForwardDeclaration() && method.hasBody()) {
+                // Replace forward declaration with implementation
+                methodTable.put(sig, method);
+                return;
+            }
             throw new SemanticException("Duplicate method: " + sig);
         }
         methodTable.put(sig, method);

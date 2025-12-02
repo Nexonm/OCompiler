@@ -1,4 +1,7 @@
-// Class with member variables
+// Name: Class with member variables
+// Description: Simple class that should pass
+// Expected result: pass
+// Expected fail stage: none
 class Counter is
     var count : Integer(0)
     var isActive : Boolean(true)

@@ -226,6 +226,11 @@ public class DeadCodeReturnEliminator implements ASTVisitor<Void> {
     }
 
     @Override
+    public Void visit(ExpressionStatement node) {
+        return null;
+    }
+
+    @Override
     public Void visit(UnknownStatement node) {
         return null;
     }

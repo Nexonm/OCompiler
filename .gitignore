@@ -32,5 +32,7 @@ bin/
 OCompiler.iml
 
 ### OUR FILES ###
-src/outcode/src
-src/outcode/app
+src/outcode/
+
+*.class
+sources.txt

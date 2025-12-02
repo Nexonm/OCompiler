@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     private final String outputDir;
+    private final boolean DEBUG;
     private InstructionEmitter emitter;
     private MethodContext currentContext;
     private String currentClassName;
@@ -38,6 +39,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
      */
     public JasminCodeGenerator(String outputDir) {
         this.outputDir = outputDir;
+        this.DEBUG = outputDir == null || outputDir.isEmpty();
     }
 
     /**
@@ -56,8 +58,14 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
                 generateClass(classDecl);
             }
 
+            boolean entryPointGenerated = generateEntryPoint(program);
+
+            if (DEBUG) {
+                return;
+            }
             System.out.println("Code generation complete!");
-            System.out.println("Generated " + program.getClasses().size() +
+            int totalFiles = program.getClasses().size() + (entryPointGenerated ? 1 : 0);
+            System.out.println("Generated " + totalFiles +
                     " .j file(s) in " + outputDir);
 
         } catch (IOException e) {
@@ -102,6 +110,9 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         }
 
         // 5. Write to file
+        if (DEBUG) {
+            return;
+        }
         writeToFile(classDecl.getName() + ".j", emitter.getCode());
     }
 
@@ -225,6 +236,105 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         currentContext = null;
     }
 
+    // ========== ENTRY POINT GENERATION ==========
+
+    private boolean generateEntryPoint(Program program) {
+        if (DEBUG) {
+            return false;
+        }
+
+        ClassDecl startClass = null;
+        boolean userDefinedMain = false;
+
+        for (ClassDecl classDecl : program.getClasses()) {
+            if ("Start".equals(classDecl.getName())) {
+                startClass = classDecl;
+            }
+            if ("Main".equals(classDecl.getName())) {
+                userDefinedMain = true;
+            }
+        }
+
+        if (startClass == null) {
+            System.out.println("Skipping entry point generation: no Start class found.");
+            return false;
+        }
+
+        if (userDefinedMain) {
+            throw new RuntimeException("Program already defines class 'Main'; cannot auto-generate entry point.");
+        }
+
+        MethodDecl startMethod = findStartMethod(startClass);
+        if (startMethod == null) {
+            throw new RuntimeException("Start class must declare method 'start()' with no parameters.");
+        }
+
+        if (!startMethod.hasBody()) {
+            throw new RuntimeException("Start.start() must have an implementation.");
+        }
+
+        Type startReturnType = startMethod.getReturnType();
+        if (startReturnType != null && !(startReturnType instanceof VoidType)) {
+            throw new RuntimeException("Start.start() must return void.");
+        }
+
+        if (!hasParameterlessConstructor(startClass)) {
+            throw new RuntimeException("Start class must declare a parameterless constructor (this()).");
+        }
+
+        String startDescriptor = "()" + getTypeDescriptor(startReturnType);
+
+        InstructionEmitter entryEmitter = new InstructionEmitter();
+        entryEmitter.emitClassHeader("Main");
+        emitSyntheticMainConstructor(entryEmitter);
+        emitSyntheticMainMethod(entryEmitter, startClass.getName(), startDescriptor);
+
+        writeToFile("Main.j", entryEmitter.getCode());
+        return true;
+    }
+
+    private MethodDecl findStartMethod(ClassDecl startClass) {
+        for (MemberDecl member : startClass.getMembers()) {
+            if (member instanceof MethodDecl method &&
+                    method.getName().equals("start") &&
+                    method.getParameters().isEmpty()) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private boolean hasParameterlessConstructor(ClassDecl classDecl) {
+        for (MemberDecl member : classDecl.getMembers()) {
+            if (member instanceof ConstructorDecl constructor &&
+                    constructor.getParameters().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void emitSyntheticMainConstructor(InstructionEmitter emitter) {
+        emitter.emitMethodHeader("<init>", "()V");
+        emitter.emitLimits(1, 1);
+        emitter.emit("aload_0");
+        emitter.emitInvoke("java/lang/Object", "<init>", "()V", "special");
+        emitter.emitReturn('v');
+        emitter.emitMethodFooter();
+    }
+
+    private void emitSyntheticMainMethod(InstructionEmitter emitter,
+                                         String startClassName,
+                                         String startDescriptor) {
+        emitter.emitMethodHeader("main", "([Ljava/lang/String;)V", true);
+        emitter.emitLimits(2, 1);
+        emitter.emitNew(startClassName);
+        emitter.emitInvoke(startClassName, "<init>", "()V", "special");
+        emitter.emitInvoke(startClassName, "start", startDescriptor, "virtual");
+        emitter.emitReturn('v');
+        emitter.emitMethodFooter();
+    }
+
     /**
      * Generate field initialization (special handling for built-in types).
      */
@@ -237,9 +347,15 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         // Check if this is a built-in type constructor with literal
         if (initializer instanceof ConstructorCall) {
             ConstructorCall ctorCall = (ConstructorCall) initializer;
+            String className = ctorCall.getClassName();
 
-            if (StandardLibrary.isBuiltInType(ctorCall.getClassName()) &&
-                    ctorCall.getArguments().size() == 1) {
+            // Optimize primitive wrappers: Integer, Boolean, Real
+            // Do NOT optimize Array[...] here, it must go through accept()
+            boolean isPrimitiveWrapper = className.equals("Integer") || 
+                                         className.equals("Boolean") || 
+                                         className.equals("Real");
+
+            if (isPrimitiveWrapper && ctorCall.getArguments().size() == 1) {
 
                 Expression arg = ctorCall.getArguments().get(0);
 
@@ -258,7 +374,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
                     arg.accept(this);
                 }
             } else {
-                // User-defined class or complex initialization
+                // User-defined class or Array or complex initialization
                 initializer.accept(this);
             }
         } else {
@@ -279,6 +395,20 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     @Override
     public Void visit(VariableDeclStatement node) {
         node.getVariableDecl().accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visit(ExpressionStatement node) {
+        node.getExpression().accept(this);
+        
+        Type type = node.getExpression().getInferredType();
+        if (type != null && !(type instanceof VoidType)) {
+            // Expression statement result is unused, pop it off the stack
+            int slots = isWideType(type) ? 2 : 1;
+            currentContext.popStack(slots);
+        }
+        
         return null;
     }
 
@@ -304,21 +434,21 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     @Override
     public Void visit(Assignment node) {
 
-        // Check if this is a field assignment
-        boolean isField = isField(node.getTargetName(), currentContext.getClassDecl());
-        if (isField) {
-            // Put field on stack
+        // Check if this is a field assignment (including inherited fields)
+        FieldInfo fieldInfo = resolveFieldInfo(node.getTargetName(), currentContext.getClassDecl());
+        if (fieldInfo != null) {
+            // Load 'this'
             emitter.emitLoad(0, 'a');  // Load 'this'
-//            emitter.emit("dup");
             currentContext.pushStack(1);
             // Evaluate value
             node.getValue().accept(this);
 
             // Store value to field
-            String descriptor = getTypeDescriptor(node.getValue().getInferredType());
-            emitter.emitFieldAccess(currentClassName, node.getTargetName(), descriptor, false);
-//            currentContext.popStack(2);
-            currentContext.popStack(2);
+            Type fieldType = fieldInfo.field.getDeclaredType();
+            String descriptor = getTypeDescriptor(fieldType);
+            emitter.emitFieldAccess(fieldInfo.declaringClass.getName(), node.getTargetName(), descriptor, false);
+            int valueSlots = isWideType(fieldType) ? 2 : 1;
+            currentContext.popStack(1 + valueSlots); // value + reference
         } else {
             // Local variable assignment
             int slot = currentContext.getSlot(node.getTargetName());
@@ -355,8 +485,14 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         for (Statement stmt : node.getThenBranch()) {
             stmt.accept(this);
         }
-        // Jump to end
-        emitter.emitGoto(endLabel);
+        
+        // Jump to end (optimization: skip if last statement is return)
+        boolean thenReturns = !node.getThenBranch().isEmpty() && 
+                node.getThenBranch().get(node.getThenBranch().size() - 1) instanceof ReturnStatement;
+        
+        if (!thenReturns) {
+            emitter.emitGoto(endLabel);
+        }
 
         // Else branch
         emitter.emitLabel(elseLabel);
@@ -368,6 +504,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
         // End label
         emitter.emitLabel(endLabel);
+        emitter.emit("nop"); // Ensure label targets a valid instruction
         return null;
     }
 
@@ -396,6 +533,7 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
         // Loop end
         emitter.emitLabel(endLabel);
+        emitter.emit("nop"); // Ensure label targets a valid instruction
         return null;
     }
 
@@ -448,18 +586,17 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(IdentifierExpr node) {
-        boolean isField = isField(node.getName(), currentContext.getClassDecl());
-        if (isField) {
+        FieldInfo fieldInfo = resolveFieldInfo(node.getName(), currentContext.getClassDecl());
+        if (fieldInfo != null) {
             // Field access
             emitter.emitLoad(0, 'a');  // Load 'this'
             currentContext.pushStack();
 
             Type fieldType = node.getInferredType();
-            char typeChar = getTypeChar(fieldType);
             boolean isWide = isWideType(fieldType);
 
             String descriptor = getTypeDescriptor(fieldType);
-            emitter.emitFieldAccess(currentClassName, node.getName(), descriptor, true);
+            emitter.emitFieldAccess(fieldInfo.declaringClass.getName(), node.getName(), descriptor, true);
 
             currentContext.popStack();
             currentContext.pushStack(isWide ? 2 : 1);
@@ -490,6 +627,19 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
     @Override
     public Void visit(ConstructorCall node) {
+        // Handle Array instantiation
+        if (node.getClassName().startsWith("Array[")) {
+             generateArrayInstantiation(node);
+             return null;
+        }
+
+        // Handle Printer instantiation - it's a virtual object
+        if (node.getClassName().equals("Printer")) {
+            emitter.emit("aconst_null"); // Push a null reference
+            currentContext.pushStack();
+            return null;
+        }
+
         // For built-in types in expression context, just push argument value
         if (StandardLibrary.isBuiltInType(node.getClassName()) &&
                 node.getArguments().size() == 1) {
@@ -529,10 +679,47 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     }
 
 
+    private void generateArrayInstantiation(ConstructorCall node) {
+        // Expect 1 argument (size)
+        Expression sizeArg = node.getArguments().get(0);
+        sizeArg.accept(this); // Pushes size (int)
+
+        Type type = node.getResolvedType();
+        // Fallback if resolvedType not set (e.g. if semantic analysis failed but we proceeded)
+        if (type == null) {
+             // We could try to parse it again, but better to fail or assume object
+             throw new RuntimeException("Array type not resolved for " + node.getClassName());
+        }
+        
+        if (type instanceof ArrayType) {
+             Type elemType = ((ArrayType) type).getElementType();
+             String name = elemType.getName();
+             
+             if (name.equals("Integer")) {
+                 emitter.emit("newarray int");
+             } else if (name.equals("Boolean")) {
+                 emitter.emit("newarray int"); // Boolean is int
+             } else if (name.equals("Real")) {
+                 emitter.emit("newarray double");
+             } else {
+                 // Object array
+                 // anewarray takes class name
+                 emitter.emit("anewarray " + name);
+             }
+        }
+        
+        currentContext.popStack(); // pop size
+        currentContext.pushStack(); // push array ref
+    }
+
     @Override
     public Void visit(MethodCall node) {
-        String methodName = node.getMethodName();
         Type targetType = node.getTarget().getInferredType();
+
+        if (targetType instanceof ArrayType) {
+            generateArrayMethodCall(node, (ArrayType) targetType);
+            return null;
+        }
 
         // Check if built-in method
         if (StandardLibrary.isBuiltInType(targetType.getName())) {
@@ -544,6 +731,61 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         return null;
     }
 
+    private void generateArrayMethodCall(MethodCall node, ArrayType arrayType) {
+        String methodName = node.getMethodName();
+        
+        // Evaluate target (array ref)
+        node.getTarget().accept(this);
+        
+        // Evaluate arguments
+        for (Expression arg : node.getArguments()) {
+            arg.accept(this);
+        }
+        
+        if (methodName.equals("get")) {
+            // Stack: array_ref, index
+            // Op: xaload
+            Type elemType = arrayType.getElementType();
+            String name = elemType.getName();
+            
+            if (name.equals("Integer") || name.equals("Boolean")) {
+                emitter.emit("iaload");
+            } else if (name.equals("Real")) {
+                emitter.emit("daload");
+            } else {
+                emitter.emit("aaload");
+            }
+            
+            // Stack update
+            currentContext.popStack(2); // array + index
+            currentContext.pushStack(isWideType(elemType) ? 2 : 1);
+            
+        } else if (methodName.equals("set")) {
+             // Stack: array_ref, index, value
+             // Op: xastore
+            Type elemType = arrayType.getElementType();
+            String name = elemType.getName();
+            
+            if (name.equals("Integer") || name.equals("Boolean")) {
+                emitter.emit("iastore");
+            } else if (name.equals("Real")) {
+                emitter.emit("dastore");
+            } else {
+                emitter.emit("aastore");
+            }
+            
+            // Stack update
+            int valueSlots = isWideType(elemType) ? 2 : 1;
+            currentContext.popStack(2 + valueSlots); // array + index + value
+            
+        } else if (methodName.equals("Length")) {
+            // Stack: array_ref
+            emitter.emit("arraylength");
+            currentContext.popStack();
+            currentContext.pushStack(); // int
+        }
+    }
+
     /**
      * Generate code for built-in method call (Integer.Plus, etc.)
      */
@@ -551,6 +793,11 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         String methodName = node.getMethodName();
         Type targetType = node.getTarget().getInferredType();
         String typeName = targetType.getName();
+
+        if (typeName.equals("Printer")) {
+            generatePrinterMethodCall(node);
+            return;
+        }
 
         // Evaluate target (pushes the value)
         node.getTarget().accept(this);
@@ -625,6 +872,33 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
             default:
                 throw new RuntimeException("Unknown Integer method: " + methodName);
         }
+    }
+
+    private void generatePrinterMethodCall(MethodCall node) {
+        // Get System.out on the stack
+        emitter.emit("getstatic java/lang/System/out Ljava/io/PrintStream;");
+        currentContext.pushStack();
+
+        // Evaluate the argument and push it on the stack
+        Expression arg = node.getArguments().get(0);
+        arg.accept(this);
+
+        // Determine println signature
+        Type argType = arg.getInferredType();
+        String descriptor;
+        char typeChar = getTypeChar(argType);
+        switch (typeChar) {
+            case 'i' -> descriptor = "(I)V";
+            case 'd' -> descriptor = "(D)V";
+            default ->
+                // Fallback for objects
+                    descriptor = "(Ljava/lang/Object;)V";
+        }
+
+        // Invoke println
+        emitter.emitInvoke("java/io/PrintStream", "println", descriptor, "virtual");
+        int argSlots = isWideType(argType) ? 2 : 1;
+        currentContext.popStack(1 + argSlots); // System.out + argument
     }
 
     /**
@@ -836,14 +1110,23 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
 
         // Get field
         Type targetType = node.getTarget().getInferredType();
-        String className = targetType.getName();
         String fieldName = node.getMemberName();
 
-        // Find field type
-        Type fieldType = node.getInferredType();
+        ClassDecl targetClassDecl = null;
+        if (targetType instanceof ClassType) {
+            targetClassDecl = ((ClassType) targetType).getDeclaration();
+        }
+
+        FieldInfo fieldInfo = resolveFieldInfo(fieldName, targetClassDecl);
+        if (fieldInfo == null) {
+            throw new RuntimeException("Undefined field: " + fieldName + " in class " +
+                    (targetClassDecl != null ? targetClassDecl.getName() : "<unknown>"));
+        }
+
+        Type fieldType = fieldInfo.field.getDeclaredType();
         String descriptor = getTypeDescriptor(fieldType);
 
-        emitter.emitFieldAccess(className, fieldName, descriptor, true);
+        emitter.emitFieldAccess(fieldInfo.declaringClass.getName(), fieldName, descriptor, true);
 
         // Update stack: pop reference, push field value
         currentContext.popStack();
@@ -862,16 +1145,27 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     /**
      * Check if the given variable name is a field of the current class.
      */
-    private boolean isField(String name, ClassDecl classDecl) {
-        for (MemberDecl member : classDecl.getMembers()) {
-            if (member instanceof VariableDecl) {
-                VariableDecl field = (VariableDecl) member;
-                if (field.getName().equals(name)) {
-                    return true;
+    private FieldInfo resolveFieldInfo(String name, ClassDecl classDecl) {
+        ClassDecl current = classDecl;
+        while (current != null) {
+            for (MemberDecl member : current.getMembers()) {
+                if (member instanceof VariableDecl field && field.getName().equals(name)) {
+                    return new FieldInfo(field, current);
                 }
             }
+            current = current.getParentClass();
         }
-        return false;
+        return null;
+    }
+
+    private static class FieldInfo {
+        final VariableDecl field;
+        final ClassDecl declaringClass;
+
+        FieldInfo(VariableDecl field, ClassDecl declaringClass) {
+            this.field = field;
+            this.declaringClass = declaringClass;
+        }
     }
 
 
@@ -881,6 +1175,10 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
     private String getTypeDescriptor(Type type) {
         if (type == null) {
             return "V";  // void
+        }
+        
+        if (type instanceof ArrayType) {
+            return "[" + getTypeDescriptor(((ArrayType) type).getElementType());
         }
 
         if (type instanceof VoidType) {
@@ -974,3 +1272,4 @@ public class JasminCodeGenerator implements ASTVisitor<Void> {
         return null;
     }
 }
+

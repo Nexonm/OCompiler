@@ -1,0 +1,26 @@
+// Name: Custom class in method arguments
+// Description: This tests passing custom classes as method arguments and little bit of chain calls
+// Expected result: pass
+// Expected fail stage: none
+class Calculator is
+    var result : Integer(0)
+
+    method add(a : Value, b : Value) : Integer is
+        var test : a.getValue().Plus(b.getValue())
+        return test
+    end
+
+    this() is
+    end
+end
+
+class Value is
+    var value : Integer(0)
+
+    this() is
+    end
+
+    method getValue() : Integer is
+        return value
+    end
+end

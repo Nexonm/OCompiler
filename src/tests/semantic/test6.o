@@ -1,4 +1,7 @@
-// While loop
+// Name: While loop
+// Description: Test out of Important tests
+// Expected result: pass
+// Expected fail stage: none
 class WhileTest is
     method count(n : Integer) : Integer is
         var i : Integer(0)

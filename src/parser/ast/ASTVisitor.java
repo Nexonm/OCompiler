@@ -41,6 +41,7 @@ public interface ASTVisitor<T> {
     T visit(WhileLoop node);
     T visit(ReturnStatement node);
     T visit(VariableDeclStatement node);
+    T visit(ExpressionStatement node);
     T visit(UnknownStatement node);
 }
 

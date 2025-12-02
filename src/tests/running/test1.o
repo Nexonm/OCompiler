@@ -4,7 +4,7 @@
 // Expected fail stage: none
 
 class Value is
-    var value : Integer(1)
+    var value : Integer(10)
 
     method getValue() : Integer is
         return value

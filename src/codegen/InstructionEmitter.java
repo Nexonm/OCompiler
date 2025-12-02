@@ -102,7 +102,7 @@ public class InstructionEmitter {
      * @param descriptor Field type descriptor (I, Z, D, LClassName;)
      */
     public void emitField(String name, String descriptor) {
-        emitRaw(".field private " + name + " " + descriptor);
+        emitRaw(".field public " + name + " " + descriptor);
     }
 
     // ========== CONSTRUCTOR HELPERS ==========
@@ -156,8 +156,24 @@ public class InstructionEmitter {
      * @param descriptor Method descriptor (e.g., "()V" or "(I)I")
      */
     public void emitMethodHeader(String name, String descriptor) {
+        emitMethodHeader(name, descriptor, false);
+    }
+
+    /**
+     * Emit method header with optional static modifier.
+     *
+     * @param name Method name (or <init> for constructor)
+     * @param descriptor Method descriptor (e.g., "()V" or "(I)I")
+     * @param isStatic true to emit a static method
+     */
+    public void emitMethodHeader(String name, String descriptor, boolean isStatic) {
         emitBlank();
-        emitRaw(".method public " + name + descriptor);
+        StringBuilder builder = new StringBuilder(".method public ");
+        if (isStatic) {
+            builder.append("static ");
+        }
+        builder.append(name).append(descriptor);
+        emitRaw(builder.toString());
         increaseIndent(); // Indent everything inside method
     }
 

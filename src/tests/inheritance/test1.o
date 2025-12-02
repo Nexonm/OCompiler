@@ -1,0 +1,26 @@
+// Name: Basic Inheritance (parent value access)
+// Description: Child class inherits and modifies a parent variable.
+// Expected result: pass
+// Expected fail stage: none
+
+class Parent is
+    var value : Integer(10)
+
+    method getValue() : Integer is
+        return value
+    end
+
+    this() is
+    end
+end
+
+class Child extends Parent is
+    // Inherits 'value'
+
+    method modify() is
+        value := Integer(20) // Accessing parent member directly
+    end
+
+    this() is
+    end
+end
